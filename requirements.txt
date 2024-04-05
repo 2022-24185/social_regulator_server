@@ -1,0 +1,12 @@
+selenium
+undetected_chromedriver
+webdriver_manager
+anthropic
+cohere
+setuptools
+numpy
+neat-python
+graphviz
+matplotlib
+gym
+flask

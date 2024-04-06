@@ -1,2 +1,3 @@
-from pureples.hyperneat.hyperneat import create_phenotype_network 
+from neuroevolution.pureples.hyperneat.hyperneat import create_phenotype_network 
 
+ 

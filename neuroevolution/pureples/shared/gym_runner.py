@@ -4,8 +4,8 @@ Generic runner for AI Gym - runs Neat, Hyperneat and ES-Hyperneat
 
 import neat
 import numpy as np
-from pureples.hyperneat.hyperneat import create_phenotype_network
-from pureples.es_hyperneat.es_hyperneat import ESNetwork
+from neuroevolution.pureples.hyperneat.hyperneat import create_phenotype_network
+from neuroevolution.pureples.es_hyperneat.es_hyperneat import ESNetwork
 
 
 def ini_pop(state, stats, config, output):
@@ -108,6 +108,9 @@ def run_hyper(gens, env, max_steps, config, substrate, activations, max_trials=1
                                     print("Output", o)
                     action = np.argmax(o)
                     ob, reward, done, _, _ = env.step(action) # step returns Tuple[ObsType, float, bool, bool, dict]
+                    if(count < 2):
+                        if(othercount < 2):
+                                print("Reward", reward)
                     total_reward += reward
                     if done:
                         break

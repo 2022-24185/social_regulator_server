@@ -2,10 +2,10 @@ import logging
 import pickle
 import gym
 import neat
-from pureples.shared.visualize import draw_net
-from pureples.shared.substrate import Substrate
-from pureples.shared.gym_runner import run_hyper
-from pureples.hyperneat.hyperneat import create_phenotype_network
+from neuroevolution.pureples.shared.visualize import draw_net
+from neuroevolution.pureples.shared.substrate import Substrate
+from neuroevolution.pureples.shared.gym_runner import run_hyper, run_es
+from neuroevolution.pureples.hyperneat.hyperneat import create_phenotype_network
 
 # Network input and output coordinates.
 input_coordinates = [(-0.33, -1.), (0.33, -1.)]
@@ -16,6 +16,14 @@ HIDDEN_COORDINATES = [[(-0.5, 0.5), (0.5, 0.5)],
 SUBSTRATE = Substrate(
     input_coordinates, OUTPUT_COORDINATES, HIDDEN_COORDINATES)
 ACTIVATIONS = len(HIDDEN_COORDINATES) + 2
+PARAMS = {"initial_depth": 1,
+            "max_depth": 2,
+            "variance_threshold": 0.03,
+            "band_threshold": 0.3,
+            "iteration_level": 1,
+            "division_threshold": 0.5,
+            "max_weight": 8.0,
+            "activation": "sigmoid"}
 
 # Config for CPPN.
 """
@@ -26,7 +34,7 @@ The configuration is set using the neat.config.Config class.
 """
 CONFIG = neat.config.Config(neat.genome.DefaultGenome, neat.reproduction.DefaultReproduction,
                             neat.species.DefaultSpeciesSet, neat.stagnation.DefaultStagnation,
-                            'src/neuroevolution/social_brain/config_cppn_social_brain')
+                            'neuroevolution/social_brain/config_cppn_social_brain')
 
 
 def run(gens, env):
@@ -34,8 +42,8 @@ def run(gens, env):
     Run the pole balancing task using the Gym environment
     Returns the winning genome and the statistics of the run.
     """
-    winner, stats = run_hyper(gens, env, 200, CONFIG,
-                              SUBSTRATE, ACTIVATIONS, max_trials=0)
+    winner, stats = run_es(gens, env, 0, CONFIG, PARAMS, SUBSTRATE, ACTIVATIONS)
+
     return winner, stats
 
 

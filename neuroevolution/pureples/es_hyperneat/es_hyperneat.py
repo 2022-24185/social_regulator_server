@@ -4,15 +4,15 @@ All logic concerning ES-HyperNEAT resides here.
 import copy
 import neat
 import numpy as np
-from pureples.hyperneat.hyperneat import query_cppn
-from pureples.shared.visualize import draw_es
+from neuroevolution.pureples.hyperneat.hyperneat import query_cppn
+from neuroevolution.pureples.shared.visualize import draw_es
 
 
 class ESNetwork:
     """
     The evolvable substrate network.
     """
-
+ 
     def __init__(self, substrate, cppn, params):
         self.substrate = substrate
         self.cppn = cppn

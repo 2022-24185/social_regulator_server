@@ -9,7 +9,6 @@ i want to make this file #editor into a testbed for my social interaction bot, h
 import time
 import neat
 from neat import Population, DefaultGenome, DefaultReproduction, DefaultSpeciesSet, DefaultStagnation
-from src.visual_interface import visual as interface
 from flask import Flask, jsonify
 import queue
 import threading
@@ -30,8 +29,9 @@ def ini_pop(state, stats, config, output):
 def evaluate_fitness(individual):
     # Connect to interactive interface and allow users to interact with the bot
     # Return a fitness score based on the interaction
-    fitness_score = connect_to_interactive_interface_and_interact_with_bot()
-    return fitness_score
+    #fitness_score = connect_to_interactive_interface_and_interact_with_bot()
+    #return fitness_score
+    pass
 
 def activate_network(individual, state):
     # Pass the current state of the bot through the individual's neural network

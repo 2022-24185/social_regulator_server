@@ -35,7 +35,7 @@ def run_es(gens, env, max_steps, config, params, substrate, max_trials=100, outp
             fitnesses = []
 
             for _ in range(trials):
-                ob = env.reset()
+                ob, _ = env.reset()
                 net.reset()
 
                 total_reward = 0
@@ -45,9 +45,9 @@ def run_es(gens, env, max_steps, config, params, substrate, max_trials=100, outp
                         o = net.activate(ob)
 
                     action = np.argmax(o)
-                    ob, reward, done, _ = env.step(action)
+                    ob, reward, terminated, _, _ = env.step(action)
                     total_reward += reward
-                    if done:
+                    if terminated:
                         break
 
                 fitnesses.append(total_reward)

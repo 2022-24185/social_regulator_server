@@ -5,25 +5,48 @@ i want to make this file #editor into a testbed for my social interaction bot, h
 - **Neural Network Activator:** Triggers the individual's neural network activation every 10 seconds.
 - **Action Selector:** Decides the action based on the neural network output.
 """
-
+# Standard library imports
+import pickle
 import time
-import neat
-from neat import Population, DefaultGenome, DefaultReproduction, DefaultSpeciesSet, DefaultStagnation
-from flask import Flask, jsonify
 import queue
 import threading
 
+# Third-party imports
+import neat
+from neat import Population, DefaultGenome, DefaultReproduction, DefaultSpeciesSet, DefaultStagnation
+from flask import Flask, jsonify, Response
+import numpy as np
 
-# Initialize population
-def ini_pop(state, stats, config, output):
+# Local application imports
+from neuroevolution.pureples.es_hyperneat.es_hyperneat import ESNetwork
+from neuroevolution.pureples.shared.substrate import Substrate
+
+# Constants
+INPUT_COORDINATES = [(-0.33, -1.), (0.33, -1.)]
+OUTPUT_COORDINATES = [(-0.5, 1.), (0., 1.), (0.5, 1.)]
+SUBSTRATE = Substrate(INPUT_COORDINATES, OUTPUT_COORDINATES,)
+PARAMS = {"initial_depth": 1,
+            "max_depth": 2,
+            "variance_threshold": 0.03,
+            "band_threshold": 0.3,
+            "iteration_level": 1,
+            "division_threshold": 0.5,
+            "max_weight": 8.0,
+            "activation": "sigmoid"}
+
+
+def init_population(state, stats, config, output):
     """
     Initialize population attaching statistics reporter.
     """
-    pop = neat.population.Population(config, state)
+    population = neat.population.Population(config, state)
+    
+    # Add a reporter
     if output:
-        pop.add_reporter(neat.reporting.StdOutReporter(True))
-    pop.add_reporter(stats)
-    return pop
+        population.add_reporter(neat.reporting.StdOutReporter(True))
+    population.add_reporter(stats)
+
+    return population
 
 
 def evaluate_fitness(individual):
@@ -33,17 +56,9 @@ def evaluate_fitness(individual):
     #return fitness_score
     pass
 
-def activate_network(individual, state):
-    # Pass the current state of the bot through the individual's neural network
-    # Return the output of the network
-    pass
-
 def select_action(network_output):
     # Decide an action based on the network output
     pass
-
-# Create a thread-safe queue
-individual_queue = queue.Queue()
 
 def handle_user_request():
     # This function runs in a separate thread for each user
@@ -54,52 +69,38 @@ def handle_user_request():
         print("No more individuals available")
         return
 
-    # Use the individual to interact with the user
-    # ...
-
-
-
-
-# while True:
-#     # Evaluate fitness of each individual in the population
-#     for individual in pop.population.values():
-#         individual.fitness = evaluate_fitness(individual)
-
-#     # Activate neural network of each individual and select an action
-#     for individual in pop.population.values():
-#         state = None  # Get the current state of the bot
-#         network_output = activate_network(individual, state)
-#         action = select_action(network_output)
-#         # Perform the action
-
-#     # Run every 10 seconds
-#     time.sleep(10)
-
 def main():
-    # Initialize your variables here
-    state = None
-    stats = None
-    config = None
-    output = None
+    stats = neat.statistics.StatisticsReporter()
+    config = neat.config.Config(neat.genome.DefaultGenome, neat.reproduction.DefaultReproduction,
+                            neat.species.DefaultSpeciesSet, neat.stagnation.DefaultStagnation,
+                            'neuroevolution/social_brain/config_cppn_social_brain')
+    output = True
 
     app = Flask(__name__)
-    #pop = ini_pop(None, None, None, None)
+    pop = init_population(None, stats, config, output)
+    individual_queue = queue.Queue()
+
+    # Add individual genomes to the queue
+    for _, genome in pop.population.items():
+        individual_queue.put(genome)
 
     @app.route('/test', methods=['GET'])
-    # Call your functions here
-    #pop = ini_pop(state, stats, config, output)
-    #evaluate_fitness(pop)
     def test_route():
-        return jsonify({'message': 'Flask is working!'}), 200
+        if not individual_queue.empty():
+            genome = individual_queue.get()
+            cppn = neat.nn.FeedForwardNetwork.create(genome, config)
+            network = ESNetwork(SUBSTRATE, cppn, PARAMS)
+            net = network.create_phenotype_network()
+            pickled_net = pickle.dumps(net)
+            return Response(pickled_net, mimetype='application/octet-stream')
+        else: 
+            return jsonify({'message': 'No individuals available!'}), 200
 
     def main_loop():
         while True:
             print("Waiting for user request...")
-
-            # Run every 10 seconds
             time.sleep(10)
     
-    # Start the main loop in a separate thread
     threading.Thread(target=main_loop).start()
 
     # Start the Flask app

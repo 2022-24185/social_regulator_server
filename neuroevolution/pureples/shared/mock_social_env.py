@@ -14,7 +14,7 @@ import threading
 # Third-party imports
 import neat
 from neat import Population, DefaultGenome, DefaultReproduction, DefaultSpeciesSet, DefaultStagnation
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
 import numpy as np
 
 # Local application imports
@@ -91,6 +91,7 @@ def main():
     output = True
 
     app = Flask(__name__)
+    app.debug = True
     pop = init_population(None, stats, config, output)
     individual_queue = queue.Queue()
 
@@ -100,8 +101,10 @@ def main():
 
     @app.route('/test', methods=['GET'])
     def test_route():
+        app.logger.debug("getting genome")
         genome = get_genome_from_queue(individual_queue)
         if genome is not None:
+            app.logger.debug("inside genome")
             net = create_network_from_genome(genome, config)
             pickled_net = pickle_network(net)
             return Response(pickled_net, mimetype='application/octet-stream')
@@ -109,12 +112,24 @@ def main():
             return jsonify({'message': 'No individuals available!'}), 200
         
 
+    @app.route('/user_data', methods=['POST'])
+    def receive_user_data():
+        # Get the JSON data sent by the client
+        data = request.get_json()
+
+        print(data)
+
+        # Send a response back to the client
+        return jsonify({'message': 'User data received successfully'}), 200
+            
+
     def main_loop():
         while True:
             print("Waiting for user request...")
             time.sleep(10)
     
     threading.Thread(target=main_loop).start()
+
 
     # Start the Flask app
     app.run()

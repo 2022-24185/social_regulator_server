@@ -68,6 +68,20 @@ def handle_user_request():
     except queue.Empty:
         print("No more individuals available")
         return
+    
+def get_genome_from_queue(queue):
+    if not queue.empty():
+        return queue.get()
+    else:
+        return None
+    
+def create_network_from_genome(genome, config):
+    cppn = neat.nn.FeedForwardNetwork.create(genome, config)
+    network = ESNetwork(SUBSTRATE, cppn, PARAMS)
+    return network.create_phenotype_network()
+
+def pickle_network(network):
+    return pickle.dumps(network)
 
 def main():
     stats = neat.statistics.StatisticsReporter()
@@ -86,15 +100,14 @@ def main():
 
     @app.route('/test', methods=['GET'])
     def test_route():
-        if not individual_queue.empty():
-            genome = individual_queue.get()
-            cppn = neat.nn.FeedForwardNetwork.create(genome, config)
-            network = ESNetwork(SUBSTRATE, cppn, PARAMS)
-            net = network.create_phenotype_network()
-            pickled_net = pickle.dumps(net)
+        genome = get_genome_from_queue(individual_queue)
+        if genome is not None:
+            net = create_network_from_genome(genome, config)
+            pickled_net = pickle_network(net)
             return Response(pickled_net, mimetype='application/octet-stream')
         else: 
             return jsonify({'message': 'No individuals available!'}), 200
+        
 
     def main_loop():
         while True:

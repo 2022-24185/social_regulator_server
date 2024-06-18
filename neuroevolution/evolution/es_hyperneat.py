@@ -4,8 +4,8 @@ All logic concerning ES-HyperNEAT resides here.
 import copy
 import neat
 import numpy as np
-from neuroevolution.pureples.hyperneat.hyperneat import query_cppn
-from neuroevolution.pureples.shared.visualize import draw_es
+from neuroevolution.evolution.hyperneat import query_cppn
+from neuroevolution.evolution.shared.visualize import draw_es
 
 
 class ESNetwork:

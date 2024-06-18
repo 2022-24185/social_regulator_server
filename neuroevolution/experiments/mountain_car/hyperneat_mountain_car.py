@@ -6,10 +6,10 @@ import logging
 import pickle
 import gym
 import neat
-from pureples.shared.visualize import draw_net
+from neuroevolution.evolution.shared.visualize import draw_net
 from neuroevolution.evolution.substrate import Substrate
-from pureples.shared.gym_runner import run_hyper
-from pureples.hyperneat.hyperneat import create_phenotype_network
+from neuroevolution.evolution.shared.gym_runner import run_hyper
+from neuroevolution.evolution.hyperneat import create_phenotype_network
 
 # Network input and output coordinates.
 input_coordinates = [(-0.33, -1.), (0.33, -1.)]

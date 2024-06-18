@@ -11,7 +11,7 @@ reset_on_extinction   = False
 activation_default      = tanh
 activation_mutate_rate  = 0.5
 activation_options      = gauss sin tanh
-
+ 
 # node aggregation options
 aggregation_default     = sum
 aggregation_mutate_rate = 0.0

@@ -6,7 +6,7 @@ import pickle
 import graphviz
 import matplotlib.pyplot as plt
 
-
+ 
 def draw_net(net, filename=None, node_names={}, node_colors={}):
     """
     Draw neural network with arbitrary topology.

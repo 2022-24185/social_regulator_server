@@ -3,7 +3,7 @@ import pickle
 import gym
 import neat
 from neuroevolution.pureples.shared.visualize import draw_net
-from neuroevolution.pureples.shared.substrate import Substrate
+from neuroevolution.evolution.substrate import Substrate
 from neuroevolution.pureples.shared.gym_runner import run_hyper, run_es
 from neuroevolution.pureples.hyperneat.hyperneat import create_phenotype_network
 

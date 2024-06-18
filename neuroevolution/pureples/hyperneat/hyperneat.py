@@ -24,7 +24,7 @@ def create_phenotype_network(cppn, substrate, activation_function="sigmoid"):
 
     hidden_nodes = range(len(input_nodes)+len(output_nodes),
                          len(input_nodes)+len(output_nodes)+counter)
-
+ 
     node_evals = []
 
     # Get activation function.

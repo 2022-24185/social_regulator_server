@@ -5,3 +5,7 @@ graphviz
 matplotlib
 gym
 flask
+fastapi 
+uvicorn
+pytest 
+httpx

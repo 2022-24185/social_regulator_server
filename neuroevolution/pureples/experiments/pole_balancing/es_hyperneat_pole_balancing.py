@@ -7,9 +7,9 @@ import logging
 import neat
 import gym
 from pureples.shared.visualize import draw_net
-from pureples.shared.substrate import Substrate
+from neuroevolution.evolution.substrate import Substrate
 from pureples.shared.gym_runner import run_es
-from pureples.es_hyperneat.es_hyperneat import ESNetwork
+from neuroevolution.evolution.es_hyperneat import ESNetwork
 
 # S, M or L; Small, Medium or Large (logic implemented as "Not 'S' or 'M' then Large").
 VERSION = "S"

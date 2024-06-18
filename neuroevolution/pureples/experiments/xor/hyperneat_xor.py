@@ -8,7 +8,7 @@ import pickle
 import neat
 import neat.nn
 from pureples.shared.visualize import draw_net
-from pureples.shared.substrate import Substrate
+from neuroevolution.evolution.substrate import Substrate
 from pureples.hyperneat.hyperneat import create_phenotype_network
 
 # Network inputs and expected outputs.

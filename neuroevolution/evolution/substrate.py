@@ -2,7 +2,6 @@
 The substrate.
 """
 
-
 class Substrate(object):
     """
     Represents a substrate: Input coordinates, output coordinates, hidden coordinates and a resolution defaulting to 10.0.

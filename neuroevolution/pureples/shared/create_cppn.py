@@ -4,7 +4,7 @@ CPPN creator.
 
 import neat
 from neat.graphs import feed_forward_layers
-
+ 
 
 def create_cppn(genome, config, output_activation_function="tanh"):
     """

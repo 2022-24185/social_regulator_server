@@ -91,7 +91,7 @@ elitism            = 3
 survival_threshold = 0.2
 min_species_size   = 2
 
-[TournamentSpeciesSet]
+[MixedGenerationSpeciesSet]
 compatibility_threshold = 3.0
 
 [TournamentStagnation]

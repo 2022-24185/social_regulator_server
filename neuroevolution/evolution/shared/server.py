@@ -16,14 +16,14 @@ from flask import Flask, Response, jsonify, request
 # Local application imports
 from neuroevolution.evolution.es_hyperneat import ESNetwork
 from neuroevolution.evolution.substrate import Substrate
-from neuroevolution.evolution.tournament_population import \
-    TournamentPopulation
+from neuroevolution.evolution.mixed_generation_population import \
+    MixedGenerationPopulation
 
 from neuroevolution.evolution.tournament_reproduction import \
-    TournamentReproduction
+    MixedGenerationReproduction
 
-from neuroevolution.evolution.tournament_species import \
-    TournamentSpeciesSet
+from neuroevolution.evolution.mixed_generation_species import \
+    MixedGenerationSpeciesSet
 
 from neuroevolution.evolution.tournament_stagnation import \
     TournamentStagnation
@@ -102,10 +102,10 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.debug = True
     stats = neat.statistics.StatisticsReporter()
-    config = neat.config.Config(neat.genome.DefaultGenome, TournamentReproduction,
-                            TournamentSpeciesSet, TournamentStagnation,
+    config = neat.config.Config(neat.genome.DefaultGenome, MixedGenerationReproduction,
+                            MixedGenerationSpeciesSet, TournamentStagnation,
                             'neuroevolution/social_brain/config_cppn_social_brain')
-    pop = TournamentPopulation(config, calculate_fitness)
+    pop = MixedGenerationPopulation(config, calculate_fitness)
     pop.add_reporter(stats)
     pop.start_reporting()
 

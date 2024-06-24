@@ -6,13 +6,13 @@ from typing import List, Tuple, Dict
 from neat.config import ConfigParameter, DefaultClassConfig
 from neat.math_util import stat_functions
 
-from neuroevolution.evolution.tournament_species import (
-    TournamentSpeciesSet,
-    TournamentSpecies,
+from neuroevolution.evolution.mixed_generation_species import (
+    MixedGenerationSpeciesSet,
+    MixedGenerationSpecies,
 )
 
-SpeciesData = List[Tuple[int, TournamentSpecies]]
-StagnationResult = List[Tuple[int, TournamentSpecies, bool]]
+SpeciesData = List[Tuple[int, MixedGenerationSpecies]]
+StagnationResult = List[Tuple[int, MixedGenerationSpecies, bool]]
 
 class TournamentStagnation(DefaultClassConfig):
     """Keeps track of whether species are making progress and helps remove ones that are not."""
@@ -43,7 +43,7 @@ class TournamentStagnation(DefaultClassConfig):
         self.reporters = reporters
 
     def update(self,
-        species_set: TournamentSpeciesSet,
+        species_set: MixedGenerationSpeciesSet,
         genome_ids_to_consider: List[int],
         generation: int,
     ) -> StagnationResult:
@@ -62,7 +62,7 @@ class TournamentStagnation(DefaultClassConfig):
 
     def _update_fitness_history_for_species(
         self,
-        species_set: TournamentSpeciesSet,
+        species_set: MixedGenerationSpeciesSet,
         genome_ids_to_consider: List[int],
         generation: int,
     ) -> SpeciesData:

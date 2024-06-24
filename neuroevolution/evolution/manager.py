@@ -4,9 +4,9 @@ import neat
 from typing import Callable, Dict, TYPE_CHECKING
 
 import neat.genome
-from neuroevolution.evolution.tournament_population import TournamentPopulation
-from neuroevolution.evolution.tournament_reproduction import TournamentReproduction
-from neuroevolution.evolution.tournament_species import TournamentSpeciesSet
+from neuroevolution.evolution.mixed_generation_population import MixedGenerationPopulation
+from neuroevolution.evolution.tournament_reproduction import MixedGenerationReproduction
+from neuroevolution.evolution.mixed_generation_species import MixedGenerationSpeciesSet
 from neuroevolution.evolution.tournament_stagnation import TournamentStagnation
 from neuroevolution.evolution.substrate import Substrate
 from neuroevolution.evolution.es_hyperneat import ESNetwork
@@ -42,12 +42,12 @@ class EvolutionManager:
         self.config_path = config_path
         self.config = neat.Config(
             neat.DefaultGenome,
-            TournamentReproduction,
-            TournamentSpeciesSet,
+            MixedGenerationReproduction,
+            MixedGenerationSpeciesSet,
             TournamentStagnation,
             self.config_path
         )
-        self.population = TournamentPopulation(self.config, self.calculate_fitness)
+        self.population = MixedGenerationPopulation(self.config, self.calculate_fitness)
 
     def calculate_fitness(self, pop: Population, config: Config) -> None:
         print("\033[92mCalculating fitness...\033[0m")
@@ -102,4 +102,4 @@ class EvolutionManager:
         self.population.advance_population()
 
     def reset(self):
-        self.population = TournamentPopulation(self.config, self.calculate_fitness)
+        self.population = MixedGenerationPopulation(self.config, self.calculate_fitness)

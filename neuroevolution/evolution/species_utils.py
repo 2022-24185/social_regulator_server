@@ -1,6 +1,6 @@
 from typing import List
 from neat.math_util import mean
-from neuroevolution.evolution.tournament_species import TournamentSpecies
+from neuroevolution.evolution.mixed_generation_species import MixedGenerationSpecies
 
 @staticmethod
 def compute_species_spawn(
@@ -33,7 +33,7 @@ def compute_species_spawn(
 
 @staticmethod
 def compute_species_adjusted_fitness(
-    remaining_species: List[TournamentSpecies],
+    remaining_species: List[MixedGenerationSpecies],
     all_fitnesses: List[float],
     genome_ids_to_consider: List[int],
 ) -> List[float]:

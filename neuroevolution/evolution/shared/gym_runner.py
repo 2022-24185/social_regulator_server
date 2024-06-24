@@ -4,7 +4,7 @@ Generic runner for AI Gym - runs Neat, Hyperneat and ES-Hyperneat
 
 import neat
 import numpy as np
-from neuroevolution.pureples.hyperneat.hyperneat import create_phenotype_network
+from neuroevolution.evolution.hyperneat import create_phenotype_network
 from neuroevolution.evolution.es_hyperneat import ESNetwork
 
 

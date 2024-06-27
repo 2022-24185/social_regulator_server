@@ -1,8 +1,8 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from neat.genome import DefaultGenome
 from neat.config import Config
-from neuroevolution.evolution.population_manager import PopulationManager, CompleteExtinctionException
+from neuroevolution.evolution.population_manager import PopulationManager
 from neuroevolution.evolution.speciation import Speciation
 
 class TestablePopulationManager(PopulationManager):

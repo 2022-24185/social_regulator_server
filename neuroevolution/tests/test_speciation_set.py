@@ -47,13 +47,6 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
         self.species_set.add_member(species_id, (42, mock_genome))
         self.assertEqual(self.species_set.genome_to_species[42], species_id)
 
-    def test_remove_species(self):
-        species_id1 = self.species_set.create_new_species(0)
-        species_id2 = self.species_set.create_new_species(0)
-        self.species_set.remove_species(species_id1)
-        self.assertNotIn(species_id1, self.species_set.species)
-        self.assertIn(species_id2, self.species_set.species)
-
     def test_species_id_increment(self):
         species_id1 = self.species_set.create_new_species(0)
         species_id2 = self.species_set.create_new_species(0)

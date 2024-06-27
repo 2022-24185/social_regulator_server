@@ -1,7 +1,6 @@
 import unittest
 from unittest import TestCase, mock
-from itertools import count
-from neuroevolution.evolution.reproduction import MixedGenerationReproduction, GenomeFactory
+from neuroevolution.evolution.reproduction import MixedGenerationReproduction
 from neat.config import Config
 from neat.genome import DefaultGenome
 from neuroevolution.evolution.species import MixedGenerationSpecies
@@ -25,9 +24,9 @@ class TestMixedGenerationReproduction(TestCase):
             "min_species_size": 10
         }
         result = MixedGenerationReproduction.parse_config(param_dict)
-        self.assertEqual(result.elitism, 5)
-        self.assertEqual(result.survival_threshold, 0.3)
-        self.assertEqual(result.min_species_size, 10)
+        self.assertEqual(result.elitism, 5) # pylint: disable=no-member
+        self.assertEqual(result.survival_threshold, 0.3) # pylint: disable=no-member
+        self.assertEqual(result.min_species_size, 10) # pylint: disable=no-member
 
     def test_create_new_genomes(self):
         num_genomes = 3

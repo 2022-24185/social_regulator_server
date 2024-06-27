@@ -1,5 +1,5 @@
 import unittest
-from unittest import TestCase, mock
+from unittest import TestCase
 from neuroevolution.evolution.elites import Elites
 from neat.genome import DefaultGenome
 

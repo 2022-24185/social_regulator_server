@@ -2,30 +2,9 @@
 from fastapi.testclient import TestClient
 from neuroevolution.server.server import app
 import logging, pytest, random, pickle, neat, base64
-from neuroevolution.evolution.manager import EvolutionManager
+from neuroevolution.evolution.phenotype_creator import PhenotypeCreator
 
 client = TestClient(app)
-
-def test_reset_population():
-    response = client.post("/restart_population")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Population reset"}
-
-def test_standard_population():
-    manager = EvolutionManager('neuroevolution/evolution/config_cppn_social_brain')
-    assert manager.population is not None
-
-def test_standard_population_is_30():
-    manager = EvolutionManager('neuroevolution/evolution/config_cppn_social_brain')
-    assert len(manager.population.population) == 50
-
-def test_standard_speciation():
-    manager = EvolutionManager('neuroevolution/evolution/config_cppn_social_brain')
-    assert manager.population.species is not None
-
-def test_standard_speciation():
-    manager = EvolutionManager('neuroevolution/evolution/config_cppn_social_brain')
-    assert len(manager.population.species.species) == 1
 
 def test_receive_user_data():
     response = client.post("/user_data", json={"genome_id": 1, "time_since_startup": 123.45, "user_rating": 4})

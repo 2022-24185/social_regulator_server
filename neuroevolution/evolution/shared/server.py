@@ -16,17 +16,17 @@ from flask import Flask, Response, jsonify, request
 # Local application imports
 from neuroevolution.evolution.es_hyperneat import ESNetwork
 from neuroevolution.evolution.substrate import Substrate
-from neuroevolution.evolution.mixed_generation_population import \
-    MixedGenerationPopulation
+from neuroevolution.evolution.population_evolver import \
+    PopulationEvolver
 
-from neuroevolution.evolution.tournament_reproduction import \
+from neuroevolution.evolution.reproduction import \
     MixedGenerationReproduction
 
-from neuroevolution.evolution.mixed_generation_species import \
+from neuroevolution.evolution.species_set import \
     MixedGenerationSpeciesSet
 
-from neuroevolution.evolution.tournament_stagnation import \
-    TournamentStagnation
+from neuroevolution.evolution.stagnation import \
+    MixedGenerationStagnation
 
 # Type aliases
 Genome = neat.genome.DefaultGenome
@@ -103,15 +103,15 @@ def create_app() -> Flask:
     app.debug = True
     stats = neat.statistics.StatisticsReporter()
     config = neat.config.Config(neat.genome.DefaultGenome, MixedGenerationReproduction,
-                            MixedGenerationSpeciesSet, TournamentStagnation,
+                            MixedGenerationSpeciesSet, MixedGenerationStagnation,
                             'neuroevolution/social_brain/config_cppn_social_brain')
-    pop = MixedGenerationPopulation(config, calculate_fitness)
+    pop = PopulationEvolver(config, calculate_fitness)
     pop.add_reporter(stats)
     pop.start_reporting()
 
     @app.route('/test', methods=['GET'])
     def test_route() -> Response:
-        genome = pop.get_random_non_evaluated_member()
+        genome = pop.pop_manager.get_random_available_genome()
         if genome is not None:
             net = create_network_from_genome(genome, config)
             pickled_net = pickle_network(genome.key, net)
@@ -123,7 +123,7 @@ def create_app() -> Flask:
         # Get the JSON data sent by the client
         data = request.get_json()
         # make population handle the data
-        pop.receive_evaluation(data['genome_id'], data)
+        pop.handle_receive_user_data(data)
         # print data in pink
         print("\033[95mReceived user data: ", data, "\033[0m")
         return jsonify({'message': 'User data received successfully'}), 200

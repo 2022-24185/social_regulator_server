@@ -14,38 +14,38 @@ class TestMixedGenerationStagnationMethods(unittest.TestCase):
     def test_parse_config_valid_parameters(self):
         param_dict = {"species_fitness_func": "max", "max_stagnation": 10, "species_elitism": 2}
         config = MixedGenerationStagnation.parse_config(param_dict)
-        self.assertEqual(config.species_fitness_func, "max")
-        self.assertEqual(config.max_stagnation, 10)
-        self.assertEqual(config.species_elitism, 2)
+        self.assertEqual(config.species_fitness_func, "max") # pylint: disable=no-member
+        self.assertEqual(config.max_stagnation, 10) # pylint: disable=no-member
+        self.assertEqual(config.species_elitism, 2) # pylint: disable=no-member
 
     def test_parse_config_with_defaults(self):
         param_dict = {}
         config = MixedGenerationStagnation.parse_config(param_dict)
-        self.assertEqual(config.species_fitness_func, "mean")
-        self.assertEqual(config.max_stagnation, 15)
-        self.assertEqual(config.species_elitism, 0)
+        self.assertEqual(config.species_fitness_func, "mean") # pylint: disable=no-member
+        self.assertEqual(config.max_stagnation, 15) # pylint: disable=no-member
+        self.assertEqual(config.species_elitism, 0) # pylint: disable=no-member
 
     def test_init_invalid_species_fitness_func(self):
         self.config_mock.species_fitness_func = "invalid_func"
         with self.assertRaises(RuntimeError):
             MixedGenerationStagnation(self.config_mock, self.reporters_mock)
 
-    def test_calculate_prev_fitness_with_history(self):
+    def testcalculate_prev_fitness_with_history(self):
         species_mock = MagicMock(fitness_history=[1, 2, 3])
-        result = self.stagnation._calculate_prev_fitness(species_mock)
+        result = self.stagnation.calculate_prev_fitness(species_mock)
         self.assertEqual(result, 3)
 
-    def test_calculate_prev_fitness_empty_history(self):
+    def testcalculate_prev_fitness_empty_history(self):
         species_mock = MagicMock(fitness_history=[])
-        result = self.stagnation._calculate_prev_fitness(species_mock)
+        result = self.stagnation.calculate_prev_fitness(species_mock)
         self.assertEqual(result, -sys.float_info.max)
 
-    def test_update_species_fitness(self):
+    def testupdate_species_fitness(self):
         species_mock = MagicMock()
         species_mock.fitness_history = []
         species_mock.get_subset_of_fitnesses.return_value = [1, 2, 3]
         self.stagnation.species_fitness_func = MagicMock(return_value=2)
-        self.stagnation._update_species_fitness(species_mock, [1, 2, 3])
+        self.stagnation.update_species_fitness(species_mock, [1, 2, 3])
         self.assertEqual(species_mock.fitness, 2)
         self.assertIn(2, species_mock.fitness_history)
 

@@ -57,7 +57,7 @@ class MixedGenerationStagnation(DefaultClassConfig):
         result = self._identify_stagnant_species(species_data, generation)
         return result
     
-    def _calculate_prev_fitness(self, species: MixedGenerationSpecies) -> float:
+    def calculate_prev_fitness(self, species: MixedGenerationSpecies) -> float:
         """
         Returns the previous fitness of the species.
 
@@ -66,7 +66,7 @@ class MixedGenerationStagnation(DefaultClassConfig):
         """
         return max(species.fitness_history) if species.fitness_history else -sys.float_info.max
     
-    def _update_species_fitness(self, species: MixedGenerationSpecies, evaluated_genome_ids):
+    def update_species_fitness(self, species: MixedGenerationSpecies, evaluated_genome_ids):
         """
         Updates the fitness of the species.
         
@@ -96,8 +96,8 @@ class MixedGenerationStagnation(DefaultClassConfig):
         """
         species_data = []
         for sid, species in species_set.species.items():
-            prev_fitness = self._calculate_prev_fitness(species)
-            self._update_species_fitness(species, evaluated_genome_ids)
+            prev_fitness = self.calculate_prev_fitness(species)
+            self.update_species_fitness(species, evaluated_genome_ids)
             print(f"prev_fitness: {prev_fitness}, species.fitness: {species.fitness}")
             if prev_fitness is None or species.fitness > prev_fitness:
                 species.last_improved = generation

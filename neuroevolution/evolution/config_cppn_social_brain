@@ -91,15 +91,15 @@ elitism            = 3
 survival_threshold = 0.2
 min_species_size   = 2
 
-[MixedGenerationSpeciesSet]
+[Speciation]
 compatibility_threshold = 3.0
 
-[TournamentStagnation]
+[MixedGenerationStagnation]
 species_fitness_func = max
 max_stagnation       = 20
 species_elitism      = 3
 
-[TournamentReproduction]
+[MixedGenerationReproduction]
 elitism            = 3
 survival_threshold = 0.2
 min_species_size   = 2

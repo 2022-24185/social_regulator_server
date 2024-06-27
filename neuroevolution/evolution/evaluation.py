@@ -3,6 +3,7 @@ from typing import List, Callable
 
 from neat.math_util import mean
 from neat.genome import DefaultGenome
+from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
 
 # Type aliases for better readability
 FitnessSummarizer = Callable[[List[float]], float]
@@ -16,7 +17,7 @@ class Evaluation:
     """
     Manages the evaluation of genomes and tracks their fitness.
     """
-    def __init__(self, config, fitness_function, evaluation_threshold):
+    def __init__(self, config, fitness_function: BasicFitness, evaluation_threshold):
         """
         Initialize the evaluation manager.
 

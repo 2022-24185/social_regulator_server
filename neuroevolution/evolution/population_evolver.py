@@ -14,13 +14,12 @@ from neuroevolution.evolution.evaluation import Evaluation
 
 if TYPE_CHECKING:
     from neuroevolution.server.models import UserData
+    from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
 
 # Type aliases for better readability
 Population = Dict[int, DefaultGenome]
 SpeciesSet = MixedGenerationSpeciesSet
 State = Tuple[Population, SpeciesSet, int]
-FitnessFunction = Callable[[Population, Config], None]
-
 
 class CompleteExtinctionException(Exception):
     """Exception to raise when a population has no members."""
@@ -33,7 +32,7 @@ class PopulationEvolver:
     Manages the population lifecycle, including fitness evaluation, reproduction, and speciation.
     """
 
-    def __init__(self, config: Config, fitness_function: FitnessFunction, evaluation_threshold: int = 50):
+    def __init__(self, config: Config, fitness_function: 'BasicFitness', evaluation_threshold: int = 50):
         self.reporters = self.create_reporter_set()
         self.config = config
         self.is_evolving = False
@@ -59,7 +58,7 @@ class PopulationEvolver:
         """Create the population manager."""
         return PopulationManager(self.config)
 
-    def create_evaluation(self, fitness_function, evaluation_threshold) -> Evaluation:
+    def create_evaluation(self, fitness_function: 'BasicFitness', evaluation_threshold) -> Evaluation:
         """Create the evaluation handler."""
         return Evaluation(self.config, fitness_function, evaluation_threshold)
 
@@ -93,6 +92,14 @@ class PopulationEvolver:
             return  # Assume 0 is an invalid ID or a placeholder
         genome = self.pop_manager.update_genome_data(user_data.genome_id, user_data)
         self.evaluation.evaluate(user_data.genome_id, genome)
+
+    def return_random_individual(self): 
+        """
+        Return a random genome from the population.
+
+        :return: A random genome from the population.
+        """
+        return self.pop_manager.get_random_available_genome()
 
     def advance_population(self):
         """Advance the population to the next generation, checking for fitness goals."""

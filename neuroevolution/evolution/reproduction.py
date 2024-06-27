@@ -60,7 +60,12 @@ class MixedGenerationReproduction(DefaultClassConfig):
         )
 
     def create_new_genomes(self, num_genomes: int) -> Population:
-        """Create a number of new genomes from scratch."""
+        """
+        Create a number of new genomes from scratch.
+        
+        :param num_genomes: The number of genomes to create.
+        :return: A dictionary mapping genome key to genome.
+        """
         new_genomes = {}
         for _ in range(num_genomes):
             key = next(self.genome_indexer)
@@ -75,8 +80,11 @@ class MixedGenerationReproduction(DefaultClassConfig):
         selected_genome_ids: List[int],
     ) -> Population:
         """
-        Handles the reproduction of genomes from a selected subset of species,
-        involving both creation of new genomes and reproduction from existing genomes.
+        Reproduce the given genomes into a new generation.
+
+        :param active_species: The currently active species.
+        :param selected_genome_ids: The genome ids of the genomes to be reproducted.
+        :return: The new population.
         """
         species_reproduction = SpeciesReproduction(active_species, selected_genome_ids, self.get_minimum_species_size(), self.config)
         new_population = species_reproduction.reproduce()

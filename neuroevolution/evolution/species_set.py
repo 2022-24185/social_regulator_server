@@ -4,7 +4,6 @@ from neuroevolution.evolution.species import MixedGenerationSpecies
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome
-    
 
 Member = Tuple[int, 'DefaultGenome']
 Members = List[Member]
@@ -177,11 +176,7 @@ class MixedGenerationSpeciesSet():
         :return: True if the genome is part of a species, False otherwise.
         """
         return individual_id in self.genome_to_species
-        # for _, species in self.species.items():
-        #     if species.is_member(individual_id):
-        #         return True
-        # return False
-    
+
     def mark_stagnant(self, species_id: int) -> None:
         """
         Marks a species as stagnant.
@@ -193,11 +188,11 @@ class MixedGenerationSpeciesSet():
         Removes all stagnant species from the set.
         """
         to_remove = []
-        for id, species in self.species.items():
+        for sid, species in self.species.items():
             if not species.is_active():
-                to_remove.append(id)
-        for id in to_remove:
-            self.remove_species(id)
+                to_remove.append(sid)
+        for sid in to_remove:
+            self.remove_species(sid)
     
     
 

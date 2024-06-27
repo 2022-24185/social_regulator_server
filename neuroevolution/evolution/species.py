@@ -1,5 +1,8 @@
+"""Contains the MixedGenerationSpecies class, which holds information about a species and its members. """
+
+from typing import TYPE_CHECKING, List, Optional, Set, Tuple
+
 from neat.six_util import iteritems
-from typing import List, Set, Tuple, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome

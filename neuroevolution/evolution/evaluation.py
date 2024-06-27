@@ -4,7 +4,6 @@ from typing import List, Callable
 from neat.math_util import mean
 from neat.genome import DefaultGenome
 
-
 # Type aliases for better readability
 FitnessSummarizer = Callable[[List[float]], float]
 
@@ -57,7 +56,6 @@ class Evaluation:
         :param genome: The genome to evaluate.
         """
         genome.fitness = self.fitness_function(genome, self.config)  # Assuming each genome has a fitness attribute
-        print(f"fitness-computed")
         self.evaluated_genomes.update({genome_id: genome})
     
     def threshold_reached(self) -> bool:

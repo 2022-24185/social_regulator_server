@@ -1,9 +1,11 @@
 """Divides the population into species based on genomic distances."""
 
+import math
+import random
 from itertools import count
-import math, random
+from typing import Dict, List, Tuple
+
 from neat.genome import DefaultGenome
-from typing import List, Tuple, Dict
 
 Member = Tuple[int, DefaultGenome]
 Members = List[Member]

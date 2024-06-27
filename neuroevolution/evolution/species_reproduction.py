@@ -1,5 +1,6 @@
-from typing import List, Tuple, Dict, TYPE_CHECKING
+"""Handles reproduction logic for species"""
 import logging
+from typing import List, Tuple, Dict, TYPE_CHECKING
 from neat.math_util import mean
 from neuroevolution.evolution.species import MixedGenerationSpecies
 from neuroevolution.evolution.fitness_manager import FitnessManager
@@ -50,13 +51,13 @@ class SpeciesReproduction:
         Returns the total number of dying members across all species.
         """
         return sum(species.dying_count for species in self.active_species)
-    
+
     def get_evaluated_genome_ids(self):
         """
         Returns the list of genome IDs that have been evaluated.
         """
         return self.evaluated_genome_ids
-    
+
     def create_offspring_for_species(self, species: MixedGenerationSpecies, sorted_parents: Members, dying_parents_count: int) -> Dict[int, "DefaultGenome"]:
         """
         Creates offspring for a given species.
@@ -64,19 +65,22 @@ class SpeciesReproduction:
         if dying_parents_count > 0:
             return self.offspring_generator.create_offspring(sorted_parents, dying_parents_count)
         else:
-            logging.info(f"No offspring created for species {species.key}")
+            logging.info("No offspring created for species %s", species.key)
             return {}
-    
+
     def process_dying_parents(self, species: MixedGenerationSpecies, sorted_parents: Members, elites: Dict[int, 'DefaultGenome']) -> int:
         """
         Identifies and processes dying parents.
 
-        Returns the number of dying parents.
+        :param species: The species to process.
+        :param sorted_parents: The list of parents sorted by fitness.
+        :param elites: The elites.
+        :return: The number of dying parents.
         """
         dying_parents = set(sorted_parents[0]) - set(elites.keys())
         species.kill_members(dying_parents)
         return len(dying_parents)
-    
+
     def adjust_fitnesses(self):
         """
         Adjusts the fitnesses of the offspring.
@@ -119,7 +123,7 @@ class SpeciesReproduction:
             final_offspring_counts.append(final_offspring_count)
 
         return final_offspring_counts
-    
+
     def compute_offspring_counts(self) -> List[int]:
         """
         Compute the number of offspring for each species.

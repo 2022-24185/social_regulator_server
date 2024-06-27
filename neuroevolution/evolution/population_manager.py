@@ -33,14 +33,22 @@ class PopulationManager:
         return Speciation(config)
     
     def set_new_population(self, new_population: Population):
-        """Set the population to a new one."""
+        """
+        Set the population to a new one.
+        
+        :param new_population: The new population to set.
+        """
         self.population = new_population
         self.speciation.species_set.reset()
         self.speciation.speciate(self.population, self.generation)
         self.available_genomes = self.get_all_genome_ids()
 
     def update_generation(self, offspring: Dict[int, DefaultGenome]):
-        """Incorporate offspring into the population and update generation count."""
+        """
+        Incorporate offspring into the population and update generation count.
+        
+        :param offspring: The offspring to add to the population.
+        """
         self.generation += 1
         self.population.update(offspring)
         self.update_speciation()
@@ -51,7 +59,12 @@ class PopulationManager:
         self.speciation.speciate(self.population, self.generation)
 
     def update_genome_data(self, genome_id: int, data: 'UserData'):
-        """Update specific data for a given genome."""
+        """
+        Update specific data for a given genome.
+        
+        :param genome_id: The ID of the genome to update.
+        :param data: The data to update for the genome.
+        """
         if genome_id in self.population:
             self.population[genome_id].data = data
             return self.get_genome(genome_id)
@@ -76,7 +89,12 @@ class PopulationManager:
             raise ValueError(f"Genome ID {genome_id} is not in the available genomes list.")
 
     def update_stagnation(self, stagnation: MixedGenerationStagnation, evaluated_ids: List[int]):
-        """Evaluate stagnation and collect fitnesses from active genomes."""
+        """
+        Evaluate stagnation and collect fitnesses from active genomes.
+        
+        :param stagnation: The stagnation instance to use for updating species.
+        :param evaluated_ids: A list of genome IDs that have been evaluated.
+        """
         stagnation_mapping = stagnation.update(self.get_species_set(), evaluated_ids, self.generation)
         self.speciation.update_stagnant_species(stagnation_mapping)
 
@@ -123,7 +141,7 @@ class PopulationManager:
         :return: A list of genome IDs that are available.
         """
         return self.available_genomes
-    
+
     def get_random_available_genome(self) -> DefaultGenome:
         """
         Send a random member to the user.

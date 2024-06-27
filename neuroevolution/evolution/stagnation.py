@@ -1,6 +1,6 @@
 """Keeps track of whether species are making progress and helps remove ones that are not."""
 
-import sys, logging
+import sys
 from typing import List, Tuple, Dict
 
 from neat.config import ConfigParameter, DefaultClassConfig, Config
@@ -33,6 +33,9 @@ class MixedGenerationStagnation(DefaultClassConfig):
         self.reporters = reporters
 
     def set_fitness_func(self, config):
+        """
+        Returns the species fitness function based on the configuration.
+        """
         func = stat_functions.get(config.species_fitness_func)
         if func is None:
             raise RuntimeError(f"Unexpected species fitness func: {config.species_fitness_func}")
@@ -101,10 +104,16 @@ class MixedGenerationStagnation(DefaultClassConfig):
             species_data.append((sid, species))
         return species_data
     
-    def sort_by_fitness(self, species_data: SpeciesData): 
-        sorted = species_data.copy()
-        sorted.sort(key=lambda x: x[1].fitness, reverse=True)
-        return sorted
+    def sort_by_fitness(self, species_data: SpeciesData) -> SpeciesData:
+        """
+        Sorts the species by fitness in descending order.
+        
+        :param species_data: A list of tuples containing the species ID and the species instance.
+        :return: A list of tuples containing the species ID and the species instance, sorted by fitness.
+        """
+        sorted_data = species_data.copy()
+        sorted_data.sort(key=lambda x: x[1].fitness, reverse=True)
+        return sorted_data
     
     def _is_species_stagnant(self, species: MixedGenerationSpecies, generation: int, index: int, num_non_stagnant: int) -> bool:
         """

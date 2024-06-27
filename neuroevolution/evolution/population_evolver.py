@@ -1,6 +1,5 @@
 """Implements the core evolution algorithm."""
-import logging
-from typing import Dict, Callable, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Callable, Tuple, TYPE_CHECKING
 
 from neat.reporting import ReporterSet
 from neat.genome import DefaultGenome
@@ -45,18 +44,23 @@ class PopulationEvolver:
         self.best_genome = None
 
     def create_reporter_set(self) -> ReporterSet:
+        """Create the reporter set."""
         return ReporterSet()
 
     def create_stagnation(self) -> MixedGenerationStagnation:
+        """Create the stagnation handler."""
         return self.config.stagnation_type(self.config.stagnation_config, self.reporters)
 
     def create_reproduction(self) -> MixedGenerationReproduction:
+        """Create the reproduction handler."""
         return self.config.reproduction_type(self.config, self.stagnation)
 
     def create_population_manager(self) -> PopulationManager:
+        """Create the population manager."""
         return PopulationManager(self.config)
 
     def create_evaluation(self, fitness_function, evaluation_threshold) -> Evaluation:
+        """Create the evaluation handler."""
         return Evaluation(self.config, fitness_function, evaluation_threshold)
 
     def create_new_population(self) -> Population:
@@ -114,6 +118,7 @@ class PopulationEvolver:
         Checks if the evolution should terminate based on the fitness criterion.
         
         :param best_genome: The genome with highest fitness in the population.
+        :return: True if the fitness threshold has been reached, False otherwise.
         """
         if not self.config.no_fitness_termination:
             if best_genome.fitness >= self.config.fitness_threshold:
@@ -128,7 +133,7 @@ class PopulationEvolver:
         """
         if self.best_genome is None or best_genome.fitness > self.best_genome.fitness:
             self.best_genome = best_genome
-    
+
     def check_and_handle_extinction(self):
         """Check for and handle potential extinction events."""
         if not self.pop_manager.get_active_species(self.stagnation, self.evaluation.get_evaluated()):

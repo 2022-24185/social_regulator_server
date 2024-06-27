@@ -36,7 +36,7 @@ class TestSpeciation(unittest.TestCase):
         self.speciation.mock_species_set.create_new_species.return_value = 20
         
         # Execute
-        self.speciation._partition_population(population, generation=1)
+        self.speciation.partition_population(population, generation=1)
 
         expected_calls = [
             call(10, (1, population[1])),
@@ -44,7 +44,7 @@ class TestSpeciation(unittest.TestCase):
         ]
         self.speciation.mock_species_set.add_member.assert_has_calls(expected_calls, any_order=True)
 
-    def test_error_handling_in_partition_population(self):
+    def test_error_handling_inpartition_population(self):
         # Setup
         population = {4: MagicMock()}
         self.speciation.mock_species_set.get_unspeciated.return_value = [4]
@@ -54,7 +54,7 @@ class TestSpeciation(unittest.TestCase):
 
         # Execute and verify that exception doesn't break the method
         with self.assertLogs(level='ERROR') as log:
-            self.speciation._partition_population(population, generation=1)
+            self.speciation.partition_population(population, generation=1)
             self.assertIn("Test Exception", log.output[0])
 
 class TestSetNewRepresentatives(unittest.TestCase):
@@ -68,7 +68,7 @@ class TestSetNewRepresentatives(unittest.TestCase):
         self.speciation.mock_species_set.get_unspeciated.return_value = []
         
         # Execute
-        self.speciation._set_new_representatives({})
+        self.speciation.set_new_representatives({})
 
         # Assert
         self.speciation.mock_species_set.get_all_species.assert_not_called()
@@ -83,7 +83,7 @@ class TestSetNewRepresentatives(unittest.TestCase):
         self.speciation.mock_species_set.get_all_species.return_value = [('species1', species_instance)]
 
         # Execute
-        self.speciation._set_new_representatives(population)
+        self.speciation.set_new_representatives(population)
 
         # Assert
         self.speciation.mock_species_set.update_species_representative.assert_called_once_with('species1', 1, 'Genome1')
@@ -118,7 +118,7 @@ class TestSetNewRepresentatives(unittest.TestCase):
         self.speciation.distance_cache = MagicMock(side_effect=mock_distance_fn)
 
         # Execute
-        self.speciation._set_new_representatives(population)
+        self.speciation.set_new_representatives(population)
 
         # Assert
         # Since Genome 2 is the closest to Genome 1 (existing representative), it should be chosen as the new representative

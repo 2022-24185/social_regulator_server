@@ -4,7 +4,8 @@ asexual reproduction from parents.
 """
 
 from itertools import count
-from typing import List, Dict, TYPE_CHECKING
+from math import ceil
+from typing import List, Dict, TYPE_CHECKING, Tuple
 
 from neat.config import ConfigParameter, DefaultClassConfig
 from neat.config import Config
@@ -13,24 +14,15 @@ from neat.genome import DefaultGenome
 from neuroevolution.evolution.species import MixedGenerationSpecies
 from neuroevolution.evolution.species_reproduction import SpeciesReproduction
 from neuroevolution.evolution.offspring_generator import OffspringGenerator
+from neuroevolution.evolution.elites import Elites
 
 if TYPE_CHECKING: 
     from neuroevolution.evolution.stagnation import MixedGenerationStagnation
 
 # Type aliases for better readability
 Population = Dict[int, DefaultGenome]
-
-class GenomeFactory:
-    """Creates new genomes either from scratch or from parents."""
-    def __init__(self, genome_type, genome_config):
-        self.genome_type = genome_type
-        self.genome_config = genome_config
-
-    def create_genome(self, key):
-        """Create a new genome with the given key."""
-        genome = self.genome_type(key)
-        genome.configure_new(self.genome_config)
-        return genome
+Member = Tuple[int, DefaultGenome]
+Members = List[Member]
 
 
 class MixedGenerationReproduction(DefaultClassConfig):
@@ -40,9 +32,10 @@ class MixedGenerationReproduction(DefaultClassConfig):
     """
     def __init__(self, config: Config, stagnation: "MixedGenerationStagnation"):
         # pylint: disable=super-init-not-called
-        self.config = config.reproduction_config
-        self.genome_factory = GenomeFactory(DefaultGenome, config.genome_config)
-        self.offspring_generator = OffspringGenerator(config)
+        self.config = config
+        self.reproduction_config = config.reproduction_config
+        self.offspring_generator = self.create_offspring_generator(DefaultGenome, config.genome_config, config.reproduction_config)
+        self.elites = Elites(self.reproduction_config.elitism)
         self.stagnation = stagnation
         self.genome_indexer = count(1)
         self.ancestors = {}
@@ -58,6 +51,12 @@ class MixedGenerationReproduction(DefaultClassConfig):
                 ConfigParameter("min_species_size", int, 2),
             ],
         )
+    
+    def create_offspring_generator(self, genome_type, genome_config, reprod_config) -> OffspringGenerator:
+        """
+        Creates a new offspring generator.
+        """
+        return OffspringGenerator(genome_type, genome_config, reprod_config)
 
     def create_new_genomes(self, num_genomes: int) -> Population:
         """
@@ -66,18 +65,28 @@ class MixedGenerationReproduction(DefaultClassConfig):
         :param num_genomes: The number of genomes to create.
         :return: A dictionary mapping genome key to genome.
         """
-        new_genomes = {}
-        for _ in range(num_genomes):
-            key = next(self.genome_indexer)
-            g = self.genome_factory.create_genome(key)
-            new_genomes[key] = g
-            self.ancestors[key] = tuple()
+        new_genomes = self.offspring_generator.create_without_parents(num_genomes)
+        for genome in new_genomes.values():
+            self.ancestors[genome.key] = tuple()
+
         return new_genomes
+    
+    def create_offspring_for_species(self, species: MixedGenerationSpecies, sorted_parents: Members, dying_parents_count: int) -> Dict[int, "DefaultGenome"]:
+        """
+        Creates offspring for a given species.
+        """
+        if dying_parents_count > 0:
+            reproduction_cutoff = max(int(ceil(self.reproduction_config.survival_threshold * len(sorted_parents))), self.reproduction_config.min_species_size)
+            offspring = self.offspring_generator.create_offspring(sorted_parents, dying_parents_count, reproduction_cutoff)
+            return offspring
+        else:
+            print("No offspring created for species %s", species.key)
+            return {}
 
     def reproduce_evaluated(
         self,
         active_species: List[MixedGenerationSpecies],
-        selected_genome_ids: List[int],
+        evaluated_genome_ids: List[int],
     ) -> Population:
         """
         Reproduce the given genomes into a new generation.
@@ -86,14 +95,22 @@ class MixedGenerationReproduction(DefaultClassConfig):
         :param selected_genome_ids: The genome ids of the genomes to be reproducted.
         :return: The new population.
         """
-        species_reproduction = SpeciesReproduction(active_species, selected_genome_ids, self.get_minimum_species_size(), self.config)
-        new_population = species_reproduction.reproduce()
+        species_reprod = SpeciesReproduction(active_species, evaluated_genome_ids, self.get_minimum_species_size(), self.config)
+        offspring_count = species_reprod.compute_offspring_counts()
+        new_population = {}
+        for i, species in enumerate(active_species):
+            sorted_parents = species.get_sorted_by_fitness(evaluated_genome_ids)
+            elites = self.elites.preserve(sorted_parents, offspring_count[i])
+            new_population.update(elites)
+            num_dying = species_reprod.process_dying_parents(species, sorted_parents, elites)
+            offspring = self.create_offspring_for_species(species, sorted_parents, num_dying)
+            new_population.update(offspring)
         return new_population
         
     def get_minimum_species_size(self) -> int:
         """Get the minimum species size."""
         return max(
-            self.config.min_species_size, self.config.elitism
+            self.reproduction_config.min_species_size, self.reproduction_config.elitism
         )
 
 # main function for module

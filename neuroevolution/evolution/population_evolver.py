@@ -1,5 +1,5 @@
 """Implements the core evolution algorithm."""
-from typing import Dict, Callable, Tuple, TYPE_CHECKING
+from typing import Dict, Tuple, TYPE_CHECKING
 
 from neat.reporting import ReporterSet
 from neat.genome import DefaultGenome
@@ -32,7 +32,7 @@ class PopulationEvolver:
     Manages the population lifecycle, including fitness evaluation, reproduction, and speciation.
     """
 
-    def __init__(self, config: Config, fitness_function: 'BasicFitness', evaluation_threshold: int = 50):
+    def __init__(self, config: Config, fitness_function: 'BasicFitness', evaluation_threshold: int = 5):
         self.reporters = self.create_reporter_set()
         self.config = config
         self.is_evolving = False
@@ -71,6 +71,10 @@ class PopulationEvolver:
         pop = self.reproduction.create_new_genomes(self.config.pop_size)
         self.pop_manager.set_new_population(pop)
 
+    def get_current_generation(self) -> int:
+        """Get the current generation."""
+        return self.pop_manager.generation
+
     def handle_receive_user_data(self, user_data: 'UserData') -> None:
         """
         Handle user data received from the server.
@@ -81,6 +85,7 @@ class PopulationEvolver:
             self.process_user_evaluation(user_data)
         if self.evaluation.threshold_reached() and not self.is_evolving:
             self.advance_population()
+            self.evaluation.clear_evaluated()
 
     def process_user_evaluation(self, user_data: 'UserData') -> None:
         """
@@ -93,7 +98,7 @@ class PopulationEvolver:
         genome = self.pop_manager.update_genome_data(user_data.genome_id, user_data)
         self.evaluation.evaluate(user_data.genome_id, genome)
 
-    def return_random_individual(self): 
+    def return_random_individual(self) -> DefaultGenome: 
         """
         Return a random genome from the population.
 
@@ -114,8 +119,10 @@ class PopulationEvolver:
 
     def reproduce_and_update_generation(self):
         """Manage the reproduction process and update generation information."""
-        active = self.pop_manager.get_active_species(self.stagnation, self.evaluation.get_evaluated())
-        offspring = self.reproduction.reproduce_evaluated(active, self.evaluation.get_evaluated())
+        evaluated = self.evaluation.get_evaluated()
+        active = self.pop_manager.get_active_species(self.stagnation, evaluated)
+        self.pop_manager.remove_evaluated(evaluated)
+        offspring = self.reproduction.reproduce_evaluated(active, evaluated)
         self.pop_manager.update_generation(offspring)
         self.check_and_handle_extinction()
         self.report_generation_end()

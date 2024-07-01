@@ -26,7 +26,7 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
     def test_reset(self):
         self.species_set.species = {'dummy': 'data'}
         self.species_set.reset()
-        self.assertEqual(self.species_set.species, {})
+        self.assertEqual(list(self.species_set.species.keys()), [1])
 
     def test_create_new_species(self):
         mock_generation = Mock()
@@ -37,14 +37,14 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
     def test_create_new_species_and_add_member(self):
         species_id = self.species_set.create_new_species(0)
         self.assertIn(species_id, self.species_set.species)
-        mock_genome = MagicMock()
-        self.species_set.add_member(species_id, (42, mock_genome))
-        self.species_set.species[species_id].add_member.assert_called_once_with((42, mock_genome))
+        mock_genome = MagicMock(key=Mock())
+        self.species_set.add_member(species_id, mock_genome)
+        self.species_set.species[species_id].add_member.assert_called_once_with(mock_genome)
 
     def test_add_member(self):
         species_id = self.species_set.create_new_species(0)
-        mock_genome = MagicMock()
-        self.species_set.add_member(species_id, (42, mock_genome))
+        mock_genome = MagicMock(key=42)
+        self.species_set.add_member(species_id,mock_genome)
         self.assertEqual(self.species_set.genome_to_species[42], species_id)
 
     def test_species_id_increment(self):
@@ -74,7 +74,7 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
 
         # Reset and check if all species are removed
         self.species_set.reset()
-        self.assertEqual(len(self.species_set.species), 0)
+        self.assertEqual(len(self.species_set.species), 1)
 
     def test_get_all_species_ids(self):
         species_id1 = self.species_set.create_new_species(0)
@@ -121,30 +121,6 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
         # Test: get_unspeciated() should return all genome ids that are not in a species
         self.assertEqual(self.species_set.get_unspeciated(mock_population), {5, 6, 7})
 
-    def test_get_compatible_genomes(self):
-        # Setup mock population with genomes
-        population = {
-            1: 'Genome1',
-            2: 'Genome2',
-            3: 'Genome3',
-            4: 'Genome4'
-        }
-
-        # Define species IDs that would be checked for compatibility
-        species_ids = [1, 2, 3]
-
-        # Mock compatibility function: let's assume genomes 1 and 3 are compatible with Genome2
-        def compatibility_fn(genome_a, genome_b):
-            compatible_pairs = {('Genome1', 'Genome2'), ('Genome2', 'Genome3')}
-            return (genome_a, genome_b) in compatible_pairs or (genome_b, genome_a) in compatible_pairs
-
-        # Execute
-        results = self.species_set.get_compatible_genomes(species_ids, 2, population, compatibility_fn)
-
-        # Check results: Expecting compatibility with genomes 1 and 3
-        expected_results = [(True, 1), (True, 3)]
-        self.assertEqual(sorted(results), sorted(expected_results))
-
     def test_mark_stagnant(self):
         species_id = self.species_set.create_new_species(0)
         self.species_set.species[species_id] = MixedGenerationSpecies(0, 1)
@@ -166,9 +142,9 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
     def test_get_representative_ids(self):
         species_id1 = self.species_set.create_new_species(0)
         species_id2 = self.species_set.create_new_species(0)
-        self.species_set.species[species_id1].get_representative_id.return_value = 42
-        self.species_set.species[species_id2].get_representative_id.return_value = 43
-        reps = self.species_set.get_representative_ids()
+        self.species_set.species[species_id1].get_representative.return_value = 42
+        self.species_set.species[species_id2].get_representative.return_value = 43
+        reps = self.species_set.get_representatives()
         expected_reps = {species_id1: 42, species_id2: 43}
         self.assertEqual(reps, expected_reps)
 
@@ -185,7 +161,33 @@ class TestMixedGenerationSpeciesSet(unittest.TestCase):
         self.assertNotIn(species_id1, self.species_set.species)
         self.assertNotIn(species_id1, self.species_set.genome_to_species.values())
 
+class TestGetCompatibleGenomes(unittest.TestCase):
+    def setUp(self):
+        self.species_set = MixedGenerationSpeciesSet()
+        self.mock_population = {'genome1': MagicMock(), 'genome2': MagicMock()}
+        self.mock_compatibility_fn = MagicMock()
 
+    def test_empty_species_set(self):
+        self.assertEqual(self.species_set.get_compatible_genomes('genome1', self.mock_population, self.mock_compatibility_fn), [])
+
+    def test_no_compatible_genomes(self):
+        self.species_set.species = {1: MagicMock(get_representative=MagicMock(return_value=MagicMock(key='genome1')))}
+        self.mock_compatibility_fn.return_value = 0
+        self.assertEqual(self.species_set.get_compatible_genomes('genome1', self.mock_population, self.mock_compatibility_fn), [])
+
+    def test_with_compatible_genomes(self):
+        self.species_set.species = {1: MagicMock(key=1, get_representative=MagicMock(return_value=MagicMock(key='genome1')))}
+        self.mock_compatibility_fn.return_value = 0.5
+        expected = [(0.5, 1)]
+        self.assertEqual(self.species_set.get_compatible_genomes('genome1', self.mock_population, self.mock_compatibility_fn), expected)
+
+
+    def test_no_representative_in_species(self):
+        species_mock = MagicMock(key=1, get_representative=MagicMock(return_value=None), get_random_member=MagicMock(return_value=Mock(key='genome2')))
+        self.species_set.species = {1: species_mock}
+        self.mock_compatibility_fn.return_value = 0.7
+        expected = [(0.7, 1)]
+        self.assertEqual(self.species_set.get_compatible_genomes('genome1', self.mock_population, self.mock_compatibility_fn), expected)
 
 if __name__ == '__main__':
     unittest.main()

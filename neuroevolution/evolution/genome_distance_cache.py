@@ -1,8 +1,9 @@
 from neat.genome import DefaultGenome
+from neat.config import DefaultClassConfig
 
 class GenomeDistanceCache(object):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, genome_config: DefaultClassConfig):
+        self.config = genome_config
         self.distances = {}
         self.hits = 0
         self.misses = 0

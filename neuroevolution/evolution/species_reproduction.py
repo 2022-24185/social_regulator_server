@@ -1,11 +1,10 @@
 """Handles reproduction logic for species"""
 import logging
+
 from typing import List, Tuple, Dict, TYPE_CHECKING
 from neat.math_util import mean
 from neuroevolution.evolution.species import MixedGenerationSpecies
 from neuroevolution.evolution.fitness_manager import FitnessManager
-from neuroevolution.evolution.elites import Elites
-from neuroevolution.evolution.offspring_generator import OffspringGenerator
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome
@@ -15,16 +14,14 @@ Members = List[Member]
 
 class SpeciesReproduction: 
     """Handles reproduction logic for species"""
-    def __init__(self, active_species, selected_genome_ids, min_species_size, config) -> None:
-        self.config = config
+    def __init__(self, active_species, selected_genome_ids, min_species_size, reproduction_config) -> None:
+        self.reprod_config = reproduction_config
         self.min_species_size = min_species_size
         self.active_species: List[MixedGenerationSpecies] = active_species
         self.evaluated_genome_ids = selected_genome_ids
         self.total_adjusted_fitness: float = 0.0
         self.total_death_count = 0
         self.fitness_collector = self.create_fitness_manager()
-        self.offspring_generator = self.create_offspring_generator()
-        self.elites = Elites(config.elitism)
 
     def create_fitness_manager(self):
         """
@@ -32,12 +29,6 @@ class SpeciesReproduction:
         """
         return FitnessManager()
     
-    def create_offspring_generator(self):
-        """
-        Creates a new offspring generator.
-        """
-        return OffspringGenerator(self.config)
-
     def get_total_adjusted_fitness(self): 
         """
         Returns the total adjusted fitness of all species.
@@ -58,16 +49,6 @@ class SpeciesReproduction:
         """
         return self.evaluated_genome_ids
 
-    def create_offspring_for_species(self, species: MixedGenerationSpecies, sorted_parents: Members, dying_parents_count: int) -> Dict[int, "DefaultGenome"]:
-        """
-        Creates offspring for a given species.
-        """
-        if dying_parents_count > 0:
-            return self.offspring_generator.create_offspring(sorted_parents, dying_parents_count)
-        else:
-            logging.info("No offspring created for species %s", species.key)
-            return {}
-
     def process_dying_parents(self, species: MixedGenerationSpecies, sorted_parents: Members, elites: Dict[int, 'DefaultGenome']) -> int:
         """
         Identifies and processes dying parents.
@@ -77,7 +58,7 @@ class SpeciesReproduction:
         :param elites: The elites.
         :return: The number of dying parents.
         """
-        dying_parents = set(sorted_parents[0]) - set(elites.keys())
+        dying_parents = set([member[0] for member in sorted_parents]) - set(elites.keys())
         species.kill_members(dying_parents)
         return len(dying_parents)
 
@@ -86,21 +67,6 @@ class SpeciesReproduction:
         Adjusts the fitnesses of the offspring.
         """
         self.fitness_collector.adjust_fitnesses(self.active_species, self.evaluated_genome_ids)
-
-    def reproduce(self) -> Dict[int, "DefaultGenome"]: 
-        """
-        Reproduces the genomes in the active species and returns a Dict of all offspring.
-        """
-        offspring_count = self.compute_offspring_counts()
-        new_population = {}
-        for species in self.active_species:
-            sorted_parents = species.get_sorted_by_fitness(self.evaluated_genome_ids)
-            elites = self.elites.preserve(sorted_parents, offspring_count)
-            new_population.update(elites)
-            num_dying = self.process_dying_parents(species, sorted_parents, elites)
-            offspring = self.create_offspring_for_species(species, sorted_parents, num_dying)
-            new_population.update(offspring)
-        return new_population
 
     def normalize_spawn_counts(self, total_dying_pop, deficit_per_species) -> List[int]:
         """

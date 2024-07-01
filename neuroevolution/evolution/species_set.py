@@ -28,6 +28,7 @@ class MixedGenerationSpeciesSet():
         Clears all species from the set.
         """
         self.species.clear()
+        self.create_new_species(0)
 
     def create_new_species(self, generation) -> int:
         """
@@ -43,7 +44,7 @@ class MixedGenerationSpeciesSet():
         self.species[new_species_id] = species_instance
         return new_species_id
     
-    def update_species_representative(self, species_id: int, rep_id: int, rep: 'DefaultGenome') -> None:
+    def update_species_representative(self, species_id: int, rep: 'DefaultGenome') -> None:
         """
         Updates the representative genome of the specified species.
 
@@ -51,24 +52,23 @@ class MixedGenerationSpeciesSet():
         :param rep_id: An integer representing the ID of the genome to be set as the representative.
         :param rep: The genome instance to be set as the representative.
         """
-        member = (rep_id, rep)
-        self.add_member(species_id, member)
-        self.set_representative(species_id, member)
+        self.add_member(species_id, rep)
+        self.set_representative(species_id, rep)
 
-    def add_member(self, species_id: int, member: Member) -> None:
+    def add_member(self, species_id: int, member: 'DefaultGenome') -> None:
         """
         Adds a genome as a member of the specified species.
 
         :param species_id: An integer representing the ID of the species.
         :param member: A tuple containing the genome ID and the genome instance to be added to the species.
         """
-        if species_id in self.species:
+        if species_id in self.species.keys():
             self.species[species_id].add_member(member)
-            self.genome_to_species[member[0]] = species_id
+            self.genome_to_species[member.key] = species_id
         else:
             raise ValueError(f"Species ID {species_id} does not exist.")
 
-    def set_representative(self, species_id: int, representative: Member) -> None:
+    def set_representative(self, species_id: int, representative: 'DefaultGenome') -> None:
         """
         Sets the representative genome for a specified species.
 
@@ -137,13 +137,13 @@ class MixedGenerationSpeciesSet():
                 if not self.is_genome_speciated(genome_id)
         ])
     
-    def get_representative_ids(self) -> Dict[int, int]: 
+    def get_representatives(self) -> Dict[int, 'DefaultGenome']: 
         """
         Retrieves the representative genome IDs for all species.
 
         :return: A dictionary mapping species IDs to their representative genome IDs.
         """
-        return {species_id: species.get_representative_id() for species_id, species in self.species.items()}
+        return {species_id: species.get_representative() for species_id, species in self.species.items()}
     
     def get_species_id_for_genome(self, individual_id: int) -> int:
         """
@@ -158,15 +158,20 @@ class MixedGenerationSpeciesSet():
         return None
     
     def get_compatible_genomes(self, 
-        species_ids: List[int], 
         genome_id: int, 
         population: Dict[int, 'DefaultGenome'], 
-        compatibility_fn: Callable[['DefaultGenome', 'DefaultGenome'], bool]
+        compatibility_fn: Callable[['DefaultGenome', 'DefaultGenome'], float]
     ) -> List[Tuple[float, int]]:
         """Returns a list of (compatibility, group_id) tuples for each group in groups."""
-        return [(compatibility_fn(population[group_id], population[genome_id]), group_id)
-                for group_id in species_ids
-                if compatibility_fn(population[group_id], population[genome_id])]
+        comp_list = []
+        for species in self.get_all_species_objects():
+            rep = species.get_representative()
+            if not rep: 
+                rep = species.get_random_member()
+            how_compatible = compatibility_fn(population[rep.key], population[genome_id])
+            if how_compatible:
+                comp_list.append((how_compatible, species.key))
+        return comp_list
     
     def is_genome_speciated(self, individual_id: int) -> bool:
         """

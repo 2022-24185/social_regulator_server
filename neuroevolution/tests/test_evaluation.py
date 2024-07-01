@@ -33,15 +33,15 @@ class TestEvaluation(unittest.TestCase):
         genome1.fitness = 1
         genome2 = mock_genome()
         genome2.fitness = 2
-        self.evaluation.evaluated_genomes = {genome1: genome1.fitness, genome2: genome2.fitness}
+        self.evaluation.evaluated_genomes = {genome1: genome1, genome2: genome2}
         best = self.evaluation.get_best()
         self.assertEqual(best, genome2)
 
     @patch('neat.genome.DefaultGenome')
     def test_evaluate(self, mock_genome):
         genome = mock_genome()
-        self.evaluation.evaluate(1, genome)
-        self.fitness_function.assert_called_once_with(genome, self.config)
+        self.evaluation.evaluate(1, genome)s
+        self.fitness_function.assert_called_once_with(genome)
         self.assertIn(genome, self.evaluation.evaluated_genomes.values())
 
     def test_threshold_reached(self):

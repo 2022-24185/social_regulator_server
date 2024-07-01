@@ -5,9 +5,14 @@ from neat.config import Config
 from neuroevolution.evolution.population_manager import PopulationManager
 from neuroevolution.evolution.speciation import Speciation
 
+config = Mock(spec=Config)
+config.genome_config = Mock()
+config.reproduction_config = Mock()
+config.species_set_config = Mock()
+
 class TestablePopulationManager(PopulationManager):
     def __init__(self, *args, **kwargs):
-        self.mock_speciation = Mock(spec=Speciation)
+        self.mock_speciation = Mock(spec=Speciation, update_speciation = Mock())
         self.mock_speciation.species_set = Mock()
         super().__init__(*args, **kwargs)
 
@@ -16,8 +21,7 @@ class TestablePopulationManager(PopulationManager):
 
 class TestPopulationManagerInitialization(unittest.TestCase):
     def setUp(self):
-        self.config = Mock(spec=Config)
-        self.config.species_set_config = Mock()
+        self.config = config
         self.config.species_set_config.compatibility_threshold = 3.0
         self.manager = PopulationManager(self.config)
 
@@ -28,11 +32,10 @@ class TestPopulationManagerInitialization(unittest.TestCase):
 
 class TestPopulationManagement(unittest.TestCase):
     def setUp(self):
-        self.config = Mock(spec=Config)
-        self.config.species_set_config = Mock()
+        self.config = config
         self.config.species_set_config.compatibility_threshold = 3.0
         
-        self.manager = PopulationManager(self.config)
+        self.manager = TestablePopulationManager(self.config)
         self.new_population = {1: DefaultGenome(1), 2: DefaultGenome(2)}
 
     def test_set_new_population(self):
@@ -56,8 +59,7 @@ class TestPopulationManagement(unittest.TestCase):
 
 class TestGenomeHandling(unittest.TestCase):
     def setUp(self):
-        self.config = Mock(spec=Config)
-        self.config.species_set_config = Mock()
+        self.config = config
         self.config.species_set_config.compatibility_threshold = 3.0
         self.manager = PopulationManager(self.config)
         self.manager.set_new_population({1: DefaultGenome(1), 2: DefaultGenome(2)})
@@ -89,8 +91,7 @@ class TestGenomeHandling(unittest.TestCase):
 
 class TestStagnationHandling(unittest.TestCase):
     def setUp(self):
-        self.config = Mock(spec=Config)
-        self.config.species_set_config = Mock()
+        self.config = config
         self.config.species_set_config.compatibility_threshold = 3.0
         self.config.stagnation_threshold = 5
         self.manager = TestablePopulationManager(self.config)

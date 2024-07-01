@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Set
 from neat.config import Config, ConfigParameter, DefaultClassConfig
 
 from neuroevolution.evolution.genome_distance_cache import GenomeDistanceCache
-from neuroevolution.evolution.shared.speciation_utils import \
-    find_closest_element
+from neuroevolution.evolution.shared.speciation_utils import find_closest_element
 from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
 
 if TYPE_CHECKING:
@@ -27,7 +26,6 @@ class Speciation(DefaultClassConfig):
     @classmethod
     def parse_config(cls, param_dict):
         """Parse the configuration parameters."""
-        print(f"PARSIIIIIING, {param_dict}")
         return DefaultClassConfig(
             param_dict,
             [
@@ -43,9 +41,8 @@ class Speciation(DefaultClassConfig):
         :param config: The configuration parameters for the speciation process.
         """
         self.compatibility_threshold = config.species_set_config.compatibility_threshold
-        self.distance_cache = self.create_distance_cache(config)
+        self.distance_cache = self.create_distance_cache(config.genome_config)
         self.species_set = self.create_species_set()
-
 
     def create_distance_cache(self, config) -> GenomeDistanceCache:
         """
@@ -82,7 +79,7 @@ class Speciation(DefaultClassConfig):
             if is_stagnant[species_id]:
                 self.species_set.mark_stagnant(species_id)
 
-    def extract_new_representative(self, unspeciated: Set[int], distance_fn: Callable, rep_id: int = None) -> Tuple[int, List[int]]:
+    def extract_new_representative_id(self, unspeciated: Set[int], distance_fn: Callable, rep: 'DefaultGenome') -> Tuple[int, List[int]]:
         """
         Extracts a new representative from the unspeciated genomes.
         
@@ -91,12 +88,12 @@ class Speciation(DefaultClassConfig):
         :param rep_id: The ID of the current representative.
         :return: A tuple containing the new representative and the updated list of unspeciated genomes.
         """
-        if not rep_id:
-            new_rep = random.choice(list(unspeciated))
+        if not rep:
+            new_rep_id = random.choice(list(unspeciated))
         else:
-            new_rep = find_closest_element(rep_id, unspeciated, distance_fn)
-        unspeciated.remove(new_rep)
-        return new_rep, unspeciated
+            new_rep_id = find_closest_element(rep.key, unspeciated, distance_fn)
+        unspeciated.remove(new_rep_id)
+        return new_rep_id, unspeciated
 
     def set_new_representatives(self, population: Dict[int, "DefaultGenome"]) -> None:
         """
@@ -115,14 +112,14 @@ class Speciation(DefaultClassConfig):
         
         for species_id, species_instance in self.species_set.get_all_species():
             try:
-                rep_id = species_instance.get_representative_id()
-                new_rep, unspeciated = self.extract_new_representative(
-                    unspeciated, distance_fn, rep_id
+                rep_genome = species_instance.get_representative()
+                new_rep_id, unspeciated = self.extract_new_representative_id(
+                    unspeciated, distance_fn, rep_genome
                 )
-                self.species_set.update_species_representative(species_id, new_rep, population[new_rep])
+                self.species_set.update_species_representative(species_id, population[new_rep_id])
             except Exception as e:
                 logging.error("Error while setting new representatives for species %s: %s", species_id, e)
-                continue
+                raise e
 
 
     def partition_population(self, population: Dict[int, "DefaultGenome"], generation: int) -> None:
@@ -133,18 +130,22 @@ class Speciation(DefaultClassConfig):
         :param population: A dictionary mapping genome IDs to genomes.
         :param generation: The current generation number.
         """
-        def is_compatible(ga, gb):
-            return self.distance_cache(ga, gb) < self.compatibility_threshold
-        
+        def how_compatible(ga, gb) -> float:
+            if self.compatibility_threshold - self.distance_cache(ga, gb) < 0:
+                return 0.0
+            else:
+                return self.distance_cache(ga, gb)
+            
         for gid in self.species_set.get_unspeciated(population):
             candidates = self.species_set.get_compatible_genomes(
-                self.species_set.get_all_species_ids(), gid, population, is_compatible)
+                gid, population, how_compatible)
             try:
                 if candidates:
-                    _, best_group_id = min(candidates, key=lambda x: x[0])
-                    self.species_set.add_member(best_group_id, (gid, population[gid]))
+                    _, best_species_id = min(candidates, key=lambda x: x[0])
+                    self.species_set.add_member(best_species_id, population[gid])
                 else:
                     new_species_id = self.species_set.create_new_species(generation)
-                    self.species_set.add_member(new_species_id, (gid, population[gid]))
+                    self.species_set.add_member(new_species_id, population[gid])
             except Exception as e:
                 logging.error("Error partitioning genome %s: %s", gid, e)
+                raise e

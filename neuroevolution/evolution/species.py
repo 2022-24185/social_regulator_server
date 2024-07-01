@@ -1,6 +1,6 @@
 """Contains the MixedGenerationSpecies class, which holds information about a species and its members. """
-
-from typing import TYPE_CHECKING, List, Optional, Set, Tuple
+import random
+from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Dict
 
 from neat.six_util import iteritems
 
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 Member = Tuple[int, 'DefaultGenome']
 Members = List[Member]
-
+Population = Dict[int, 'DefaultGenome']
 
 class MixedGenerationSpecies:
     """Holds information about a species and its members."""
@@ -25,22 +25,22 @@ class MixedGenerationSpecies:
         self.created = generation
         self.last_improved = generation
         self.representative : 'DefaultGenome'  = None
-        self.members: Members = {}
+        self.members: Population = {}
         self.fitness = None
         self.adjusted_fitness = None
         self.dying_count = 0
         self.expected_offspring = 0
         self.fitness_history = []
 
-    def add_member(self, member: Member):
+    def add_member(self, member: 'DefaultGenome'):
         """
         Adds a member to the species.
         
         :param member: A tuple containing the genome ID and the genome instance to be added to the species.
         """
-        self.members[member[0]] = member[1]
+        self.members[member.key] = member
 
-    def set_representative(self, representative: Member):
+    def set_representative(self, representative: 'DefaultGenome'):
         """
         Sets the representative genome for the species.
         
@@ -48,11 +48,17 @@ class MixedGenerationSpecies:
         """
         self.representative = representative
 
-    def get_representative_id(self) -> int:
+    def get_random_member(self) -> 'DefaultGenome':
+        """
+        Returns a random member of the species.
+        """
+        return self.members[random.choice(list(self.members.keys()))]
+
+    def get_representative(self) -> 'DefaultGenome':
         """
         Returns the ID of the representative genome.
         """
-        return self.representative[0] if self.representative else None
+        return self.representative if self.representative else None
 
     def get_fitnesses(self, genome_ids_to_consider: Optional[List[float]] = None):
         """
@@ -84,6 +90,8 @@ class MixedGenerationSpecies:
     def kill_members(self, dead_genomes: Set[int]):
         """Removes members that are no longer alive."""
         self.members = {gid: genome for gid, genome in self.members.items() if gid not in dead_genomes}
+        if self.representative in dead_genomes:
+            self.representative = None
         self.dying_count = len(dead_genomes)
 
     def compute_expected_size(self, min_species_size, total_adjusted_fitness, total_dying_pop):

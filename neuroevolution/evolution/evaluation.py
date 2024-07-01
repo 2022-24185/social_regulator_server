@@ -1,5 +1,5 @@
 """Implements the core evolution algorithm."""
-from typing import List, Callable
+from typing import List, Callable, Dict
 
 from neat.math_util import mean
 from neat.genome import DefaultGenome
@@ -28,7 +28,7 @@ class Evaluation:
         self.config = config
         self.fitness_function = fitness_function
         self.evaluation_threshold = evaluation_threshold
-        self.evaluated_genomes = {}
+        self.evaluated_genomes : Dict[int, DefaultGenome] = {}
         self.summarizer = self.get_fitness_summarizer()
 
     def get_fitness_summarizer(self) -> FitnessSummarizer:
@@ -47,16 +47,17 @@ class Evaluation:
         """
         Get the best genome from the evaluated genomes.
         """
-        best = max(self.evaluated_genomes, key=lambda g: g.fitness)
-        return best
+        best = max(self.evaluated_genomes, key=lambda x: self.evaluated_genomes[x].fitness)
+        genome = self.evaluated_genomes[best]
+        return genome
 
-    def evaluate(self, genome_id: int, genome: DefaultGenome):
+    def evaluate(self, genome_id: int, genome: DefaultGenome, **kwargs):
         """
         Evaluate a genome and store its fitness.
         
         :param genome: The genome to evaluate.
         """
-        genome.fitness = self.fitness_function(genome, self.config)  # Assuming each genome has a fitness attribute
+        self.fitness_function(genome, **kwargs)  # Assuming each genome has a fitness attribute
         self.evaluated_genomes.update({genome_id: genome})
     
     def threshold_reached(self) -> bool:

@@ -39,23 +39,10 @@ class TestSpeciation(unittest.TestCase):
         self.speciation.partition_population(population, generation=1)
 
         expected_calls = [
-            call(10, (1, population[1])),
-            call(10, (2, population[2]))
+            call(10, population[1]),
+            call(10, population[2])
         ]
         self.speciation.mock_species_set.add_member.assert_has_calls(expected_calls, any_order=True)
-
-    def test_error_handling_inpartition_population(self):
-        # Setup
-        population = {4: MagicMock()}
-        self.speciation.mock_species_set.get_unspeciated.return_value = [4]
-        self.speciation.mock_species_set.get_all_species_ids.return_value = []
-        self.speciation.mock_species_set.get_compatible_genomes.return_value = []
-        self.speciation.mock_species_set.create_new_species.side_effect = Exception("Test Exception")
-
-        # Execute and verify that exception doesn't break the method
-        with self.assertLogs(level='ERROR') as log:
-            self.speciation.partition_population(population, generation=1)
-            self.assertIn("Test Exception", log.output[0])
 
 class TestSetNewRepresentatives(unittest.TestCase):
     def setUp(self):
@@ -79,23 +66,23 @@ class TestSetNewRepresentatives(unittest.TestCase):
         population = {1: 'Genome1', 2: 'Genome2'}
         self.speciation.mock_species_set.get_unspeciated.return_value = [1, 2]
         species_instance = MagicMock()
-        species_instance.get_representative_id.return_value = None
+        species_instance.get_representative.return_value = None
         self.speciation.mock_species_set.get_all_species.return_value = [('species1', species_instance)]
 
         # Execute
         self.speciation.set_new_representatives(population)
 
         # Assert
-        self.speciation.mock_species_set.update_species_representative.assert_called_once_with('species1', 1, 'Genome1')
+        self.speciation.mock_species_set.update_species_representative.assert_called_once_with('species1', 'Genome1')
 
-    @patch('random.choice')
+    @patch('random.choice', return_value=1)
     def test_extract_new_representative_no_rep_id(self, mock_choice):
         # Setup
-        mock_choice.return_value = 1
         unspeciated = [1, 2, 3]
 
+
         # Execute
-        new_rep, updated_unspeciated = self.speciation.extract_new_representative(unspeciated, lambda x, y: abs(x-y))
+        new_rep, updated_unspeciated = self.speciation.extract_new_representative_id(unspeciated, lambda x, y: abs(x-y), None)
 
         # Assert
         self.assertEqual(new_rep, 1)
@@ -109,7 +96,7 @@ class TestSetNewRepresentatives(unittest.TestCase):
         population = {1: 1, 2: 2, 3: 3}
         self.speciation.mock_species_set.get_unspeciated.return_value = [2, 3]
         species_instance = MagicMock()
-        species_instance.get_representative_id.return_value = 1  # Assume existing representative
+        species_instance.get_representative.return_value = MagicMock(key=1)  # Assume existing representative
         self.speciation.mock_species_set.get_all_species.return_value = [(1, species_instance)]
 
         # Mock distance function
@@ -123,9 +110,9 @@ class TestSetNewRepresentatives(unittest.TestCase):
         # Assert
         # Since Genome 2 is the closest to Genome 1 (existing representative), it should be chosen as the new representative
         new_representative = 2
-        self.speciation.mock_species_set.update_species_representative.assert_called_with(1, new_representative, population[new_representative])
+        self.speciation.mock_species_set.update_species_representative.assert_called_with(1, population[new_representative])
         # Verify that Genome 2 is also added as a member of the species
-        self.speciation.mock_species_set.update_species_representative.assert_called_with(1, new_representative, population[new_representative])
+        self.speciation.mock_species_set.update_species_representative.assert_called_with(1, population[new_representative])
 
 if __name__ == '__main__':
     unittest.main()

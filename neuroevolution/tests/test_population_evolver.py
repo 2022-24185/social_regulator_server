@@ -39,6 +39,7 @@ class TestPopulationEvolverInitialization(unittest.TestCase):
         self.config.no_fitness_termination = Mock()
         self.fitness_function = Mock()
         self.evolver = TestablePopulationEvolver(self.config, self.fitness_function)
+        self.evolver.mock_pop_manager.population = {1: Mock(), 2: Mock()}
 
     def test_population_evolver_initialization(self):
         # Test that factory methods are called and set proper attributes

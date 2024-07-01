@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock
 from neuroevolution.evolution.species import MixedGenerationSpecies, Member
 
 class TestMixedGenerationSpecies(unittest.TestCase):
@@ -20,10 +21,9 @@ class TestMixedGenerationSpecies(unittest.TestCase):
         self.assertEqual(self.species.fitness_history, [])
 
     def test_add_member(self):
-        member = (2, 'genome_instance')
+        member = MagicMock(key=2)
         self.species.add_member(member)
-        self.assertIn(2, self.species.members)
-        self.assertEqual(self.species.members[2], 'genome_instance')
+        self.assertEqual(self.species.members[2].key, 2)
 
     def test_set_representative(self):
         representative = ('genome_instance',)
@@ -31,8 +31,8 @@ class TestMixedGenerationSpecies(unittest.TestCase):
         self.assertEqual(self.species.representative, representative)
 
     def test_get_representative_id(self):
-        self.species.representative = (3, 'genome_instance')
-        self.assertEqual(self.species.get_representative_id(), 3)
+        self.species.representative = MagicMock(key=3)
+        self.assertEqual(self.species.get_representative().key, 3)
 
     def test_get_fitnesses(self):
         self.species.members = {1: MockGenome(0.5), 2: MockGenome(1.0)}

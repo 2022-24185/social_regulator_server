@@ -52,7 +52,7 @@ class PopulationManager:
         self.generation += 1
         self.population.update(offspring)
         self.update_speciation()
-        self.refresh_available_genomes()
+        self.refresh_available_genomes(offspring)
 
     def update_speciation(self):
         """Handle speciation for the current population and generation."""
@@ -71,11 +71,12 @@ class PopulationManager:
         else:
             raise ValueError(f"Genome ID {genome_id} not found in the population.")
         
-    def refresh_available_genomes(self):
+    def refresh_available_genomes(self, offspring: Dict[int, DefaultGenome]):
         """
         Refresh the list of available genomes based on the current population.
         """
-        self.available_genomes = self.get_all_genome_ids()
+        offspring_ids = offspring.keys()
+        self.available_genomes.extend(offspring_ids)
 
     def mark_genome_as_unavailable(self, genome_id: int):
         """
@@ -154,4 +155,9 @@ class PopulationManager:
         self.mark_genome_as_unavailable(genome_id)
         return self.get_genome(genome_id)
     
-    
+    def remove_evaluated(self, evaluated: List[int]) -> None: 
+        """
+        Remove genomes that have been evaluated from the population.
+        """
+        for genome_id in evaluated:
+            self.population.pop(genome_id)

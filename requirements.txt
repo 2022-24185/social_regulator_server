@@ -8,4 +8,6 @@ flask
 fastapi 
 uvicorn
 pytest 
+coverage
+pylint
 httpx

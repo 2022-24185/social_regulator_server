@@ -2,7 +2,7 @@
 import logging
 from typing import TYPE_CHECKING
 from neuroevolution.evolution.networker import Network
-from neuroevolution.evolution.experiment import Experiment
+from neuroevolution.run_experiments.experiment import SimulatedUserEvalExperiment
 from neuroevolution.server.errors import MissingGenomeError
 from neuroevolution.server.data_storage import SessionData
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 logging.basicConfig(level=logging.INFO)
 
-experiment = Experiment('neuroevolution/evolution/config_cppn_social_brain')
+experiment = SimulatedUserEvalExperiment('neuroevolution/evolution/config_cppn_social_brain')
 network = Network(experiment)
 session_data = SessionData('session_data.csv')
 

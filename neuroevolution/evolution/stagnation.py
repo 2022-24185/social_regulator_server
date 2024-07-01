@@ -13,7 +13,9 @@ SpeciesData = List[Tuple[int, MixedGenerationSpecies]]
 StagnationResult = List[Tuple[int, MixedGenerationSpecies, bool]]
 
 class MixedGenerationStagnation(DefaultClassConfig):
-    """Keeps track of whether species are making progress and helps remove ones that are not."""
+    """
+    Keeps track of whether species are making progress and helps remove ones that are not.
+    """
 
     @classmethod
     def parse_config(cls, param_dict):

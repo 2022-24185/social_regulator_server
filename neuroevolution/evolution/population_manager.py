@@ -3,11 +3,9 @@ import random
 from typing import Dict, List, TYPE_CHECKING
 
 from neat.genome import DefaultGenome
-from neat.config import Config
 
 from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
-from neuroevolution.evolution.stagnation import MixedGenerationStagnation
-from neuroevolution.evolution.speciation import Speciation
+from neuroevolution.evolution.genome_manager import GenomeManager
 
 if TYPE_CHECKING:
     from neuroevolution.server.models import UserData
@@ -23,40 +21,45 @@ class CompleteExtinctionException(Exception):
 class PopulationManager:
     """Manages the members of the population"""
 
-    def __init__(self, config: Config):
-        self.population = {}
+    def __init__(self):
         self.generation = 0
-        self.speciation = self.create_speciation(config)
-        self.available_genomes = []
+        self.genomes = self.create_genome_manager()
+        self.species = self.create_species_manager()
 
-    def create_speciation(self, config): 
-        return Speciation(config)
+    def create_genome_manager(self) -> GenomeManager:
+        """
+        Create a new genome manager.
+
+        :return: The new genome manager.
+        """
+        return GenomeManager()
     
-    def set_new_population(self, new_population: Population):
+    def create_species_manager(self) -> MixedGenerationSpeciesSet:
         """
-        Set the population to a new one.
-        
-        :param new_population: The new population to set.
-        """
-        self.population = new_population
-        self.speciation.species_set.reset()
-        self.speciation.speciate(self.population, self.generation)
-        self.available_genomes = self.get_all_genome_ids()
+        Create a new species manager.
 
-    def update_generation(self, offspring: Dict[int, DefaultGenome]):
+        :param config: The configuration.
+        :return: The new species manager.
+        """
+        return MixedGenerationSpeciesSet()
+    
+    def reset(self):
+        """
+        Reset the population manager to its initial state.
+        """
+        self.generation = 0
+        self.genomes.reset()
+        self.species.reset()
+    
+    def update_generation(self) -> int:
         """
         Incorporate offspring into the population and update generation count.
         
         :param offspring: The offspring to add to the population.
         """
         self.generation += 1
-        self.population.update(offspring)
-        self.update_speciation()
-        self.refresh_available_genomes(offspring)
-
-    def update_speciation(self):
-        """Handle speciation for the current population and generation."""
-        self.speciation.speciate(self.population, self.generation)
+        self.species.set_generation(self.generation)
+        return self.generation
 
     def update_genome_data(self, genome_id: int, data: 'UserData'):
         """
@@ -65,99 +68,22 @@ class PopulationManager:
         :param genome_id: The ID of the genome to update.
         :param data: The data to update for the genome.
         """
-        if genome_id in self.population:
-            self.population[genome_id].data = data
-            return self.get_genome(genome_id)
+        genome = self.genomes.get_genome(genome_id)
+        if genome:
+            genome.data = data
+            return genome
         else:
             raise ValueError(f"Genome ID {genome_id} not found in the population.")
-        
-    def refresh_available_genomes(self, offspring: Dict[int, DefaultGenome]):
-        """
-        Refresh the list of available genomes based on the current population.
-        """
-        offspring_ids = offspring.keys()
-        self.available_genomes.extend(offspring_ids)
-
-    def mark_genome_as_unavailable(self, genome_id: int):
-        """
-        Mark a genome as unavailable, removing it from the list of available genomes.
-        
-        :param genome_id: The ID of the genome to mark as unavailable.
-        """
-        try:
-            self.available_genomes.remove(genome_id)
-        except ValueError:
-            raise ValueError(f"Genome ID {genome_id} is not in the available genomes list.")
-
-    def update_stagnation(self, stagnation: MixedGenerationStagnation, evaluated_ids: List[int]):
-        """
-        Evaluate stagnation and collect fitnesses from active genomes.
-        
-        :param stagnation: The stagnation instance to use for updating species.
-        :param evaluated_ids: A list of genome IDs that have been evaluated.
-        """
-        stagnation_mapping = stagnation.update(self.get_species_set(), evaluated_ids, self.generation)
-        self.speciation.update_stagnant_species(stagnation_mapping)
-
-    def get_species_set(self) -> MixedGenerationSpeciesSet: 
-        """
-        Returns the species set containing all species in the current population.
-        
-        :return: The species set instance.
-        """
-        return self.speciation.species_set
-    
-    def get_active_species(self, stagnation, evaluated_ids: List[int]): 
-        """
-        Returns the active species in the current population.
-        
-        :param stagnation: The stagnation instance to use for updating species.
-        :param evaluated_ids: A list of genome IDs that have been evaluated.
-        :return: A list of species instances that are active.
-        """
-        self.update_stagnation(stagnation, evaluated_ids)
-        return self.speciation.species_set.get_active_species()
-
-    def get_genome(self, genome_id: int) -> DefaultGenome:
-        """
-        Get a genome from the population.
-        
-        :param genome_id: The ID of the genome to retrieve.
-        :return: The genome instance corresponding to the given ID.
-        """
-        return self.population[genome_id]
-    
-    def get_all_genome_ids(self) -> List[int]: 
-        """
-        Get a list of all genome IDs in the population.
-
-        :return: A list of genome IDs.
-        """
-        return list(self.population.keys())
-    
-    def get_available(self):
-        """
-        Get a list of genomes that have not been sent to the client.
-        
-        :return: A list of genome IDs that are available.
-        """
-        return self.available_genomes
-
+                    
     def get_random_available_genome(self) -> DefaultGenome:
         """
         Send a random member to the user.
         
         :return: A random genome from the available genomes.
         """
-        if not self.available_genomes:
+        available = self.genomes.get_available_genomes()
+        if not available:
             raise RuntimeError("No more genomes to send.")
-        genome_id = random.choice(self.available_genomes)
-        self.mark_genome_as_unavailable(genome_id)
-        return self.get_genome(genome_id)
-    
-    def remove_evaluated(self, evaluated: List[int]) -> None: 
-        """
-        Remove genomes that have been evaluated from the population.
-        """
-        for genome_id in evaluated:
-            self.population.pop(genome_id)
+        genome = random.choice(available)
+        self.genomes.set_unavailable(genome.key)
+        return genome

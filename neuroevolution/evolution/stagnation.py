@@ -1,13 +1,16 @@
 """Keeps track of whether species are making progress and helps remove ones that are not."""
 
 import sys
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, TYPE_CHECKING
 
 from neat.config import ConfigParameter, DefaultClassConfig, Config
 from neat.math_util import stat_functions
 
-from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
+from neuroevolution.evolution.population_manager import PopulationManager
 from neuroevolution.evolution.species import MixedGenerationSpecies
+
+if TYPE_CHECKING: 
+    from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
 
 SpeciesData = List[Tuple[int, MixedGenerationSpecies]]
 StagnationResult = List[Tuple[int, MixedGenerationSpecies, bool]]
@@ -28,10 +31,11 @@ class MixedGenerationStagnation(DefaultClassConfig):
             ],
         )
 
-    def __init__(self, config: Config, reporters):
+    def __init__(self, config: Config, population_manager: PopulationManager, reporters):
         # pylint: disable=super-init-not-called
         self.stagnation_config = config
         self.species_fitness_func = self.set_fitness_func(config)
+        self.manager = population_manager
         self.reporters = reporters
 
     def set_fitness_func(self, config):
@@ -43,113 +47,67 @@ class MixedGenerationStagnation(DefaultClassConfig):
             raise RuntimeError(f"Unexpected species fitness func: {config.species_fitness_func}")
         return func
 
-    def update(self,
-        species_set: MixedGenerationSpeciesSet,
-        genome_ids_to_consider: List[int],
-        generation: int,
-    ) -> Dict[int, bool]:
+    def update_active_species(self) -> Dict[int, bool]:
         """
         Updates species fitness history information,
         checks for species that have not improved in max_stagnation generations,
         and returns a list with stagnant species marked for removal.
         """
-        species_data = self._update_fitness_history_for_species(
-            species_set, genome_ids_to_consider, generation)
-        species_data.sort(key=lambda x: x[1].fitness)
-        result = self._identify_stagnant_species(species_data, generation)
-        return result
+        for species in self.manager.species.get_all_species_objects():
+            self.update_species_fitness(species)
+        
+        stagnant_map = self._identify_stagnant_species()
+        self.remove_stagnant(stagnant_map)
+        return stagnant_map
     
-    def calculate_prev_fitness(self, species: MixedGenerationSpecies) -> float:
+    def remove_stagnant(self, is_stagnant: Dict[int, bool]) -> None:
         """
-        Returns the previous fitness of the species.
+        Marks stagnant species as inactive.
 
-        :param species: The species to get the previous fitness for.
-        :return: The previous fitness of the species.
+        :param is_stagnant: A dictionary mapping species IDs to boolean values indicating whether the species is stagnant.
         """
-        return max(species.fitness_history) if species.fitness_history else -sys.float_info.max
-    
-    def update_species_fitness(self, species: MixedGenerationSpecies, evaluated_genome_ids):
+        for species_id in self.manager.species.get_all_species_ids():
+            if is_stagnant[species_id]:
+                self.manager.species.mark_stagnant(species_id)
+        self.manager.species.remove_stagnant_species()
+        
+    def update_species_fitness(self, species: MixedGenerationSpecies):
         """
         Updates the fitness of the species.
         
         :param species: The species to update.
         :param evaluated_genome_ids: The evaluated genomes.
         """
-        species.fitness = self.species_fitness_func(
-            species.get_fitnesses(evaluated_genome_ids)
-        )
-        print(f"appending {species.fitness}")
-        species.fitness_history.append(species.fitness)
+        evaluated_fitnesses = self.manager.genomes.get_genome_fitnesses_for_species(species.key)
+        if evaluated_fitnesses:
+            fitness = self.species_fitness_func(evaluated_fitnesses)
+        else: 
+            fitness = -sys.float_info.max
+        self.manager.species.update_species_fitness(species, fitness)
+        species.fitness_history.append(fitness)
         species.adjusted_fitness = None
 
-    def _update_fitness_history_for_species(
-        self,
-        species_set: MixedGenerationSpeciesSet,
-        evaluated_genome_ids: List[int],
-        generation: int,
-    ) -> SpeciesData:
+    def identify_elite_species_ids(self, fitnesses: List[Tuple[int, float]]) -> List[int]:
         """
-        Updates the fitness history for all species in the species set.
-        
-        :param species_set: The species set to update.
-        :param evaluated_genome_ids: The evaluated genomes.
-        :param generation: The current generation.
-        :return: A list of tuples containing the species ID and the species instance.
+        Returns the elite species.
         """
-        species_data = []
-        for sid, species in species_set.species.items():
-            prev_fitness = self.calculate_prev_fitness(species)
-            self.update_species_fitness(species, evaluated_genome_ids)
-            print(f"prev_fitness: {prev_fitness}, species.fitness: {species.fitness}")
-            if prev_fitness is None or species.fitness > prev_fitness:
-                species.last_improved = generation
-            species_data.append((sid, species))
-        return species_data
-    
-    def sort_by_fitness(self, species_data: SpeciesData) -> SpeciesData:
-        """
-        Sorts the species by fitness in descending order.
-        
-        :param species_data: A list of tuples containing the species ID and the species instance.
-        :return: A list of tuples containing the species ID and the species instance, sorted by fitness.
-        """
-        sorted_data = species_data.copy()
-        sorted_data.sort(key=lambda x: x[1].fitness, reverse=True)
-        return sorted_data
-    
-    def _is_species_stagnant(self, species: MixedGenerationSpecies, generation: int, index: int, num_non_stagnant: int) -> bool:
-        """
-        Determines whether a species is stagnant.
-        
-        :param species: The species to check.
-        :param generation: The current generation.
-        :param index: The index of the species in the list of all species.
-        :param num_non_stagnant: The number of non-stagnant species.
-        :return: True if the species is stagnant, False otherwise.
-        """
-        # species elitism protects n species from stagnation
-        stagnated = True
-        if generation - species.last_improved <= self.stagnation_config.max_stagnation: 
-            stagnated = False
-        if (num_non_stagnant - index) < self.stagnation_config.species_elitism:
-            stagnated = False
-        return stagnated
+        elite_fitnesses = fitnesses[:self.stagnation_config.species_elitism]
+        return [species_id for species_id, _ in elite_fitnesses]
 
-    def _identify_stagnant_species(self, species_data: SpeciesData, generation: int) -> Dict[int, bool]:
+    def _identify_stagnant_species(self) -> Dict[int, bool]:
         """
         Identifies stagnant species that have not improved in max_stagnation generations.
-        
-        :param species_data: A list of tuples containing the species ID and the species instance.
-        :param generation: The current generation.
+        But preserves elite species based on top fitness.
+        :param fitnesses: A list of tuples containing the species ID and the species fitness.
         :return: A dictionary mapping species IDs to a boolean indicating whether the species is stagnant.
         """
+        fitnesses = self.manager.species.get_species_ids_fitness_sorted()
         result = {}
-        num_non_stagnant = len(species_data)
-        sorted_data = self.sort_by_fitness(species_data) # to fascilitate species elitism
-        for i, (species_id, species) in enumerate(sorted_data):
-            is_stagnant = self._is_species_stagnant(species, generation, i, num_non_stagnant)
-            print(f"is_stagnant: {is_stagnant}, {species_id}")
-            if is_stagnant:
-                num_non_stagnant -= 1
-            result.update({species_id: is_stagnant})
+        elite_ids = self.identify_elite_species_ids(fitnesses)
+        for species_id, _ in fitnesses:
+            if species_id in elite_ids:
+                result[species_id] = False
+            else: 
+                is_stagnant = self.manager.species.is_stagnant(species_id, self.stagnation_config.max_stagnation)
+                result[species_id] = is_stagnant
         return result

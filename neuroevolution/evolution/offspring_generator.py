@@ -49,7 +49,7 @@ class OffspringGenerator:
         child.mutate(self.genome_factory.genome_config)
         return child_id, child
 
-    def create_offspring(self, parent_pool: Members, spawn: int, parent_cutoff: int) -> Dict[int, DefaultGenome]:
+    def create_offspring(self, parent_pool: List['DefaultGenome'], to_replace: int, parent_cutoff: int) -> Dict[int, DefaultGenome]:
         """
         Returns a list of offspring created from the members
         
@@ -62,9 +62,9 @@ class OffspringGenerator:
             raise ValueError("Insufficient parents to generate offspring.")
         top_parents = parent_pool[:parent_cutoff]
         new_population = {}
-        for _ in range(spawn):
+        for _ in range(to_replace):
             parent1, parent2 = random.sample(top_parents, 2)
-            child_id, child = self.mate_parents(parent1[1], parent2[1])
+            child_id, child = self.mate_parents(parent1, parent2)
             new_population[child_id] = child
 
         return new_population

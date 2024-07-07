@@ -4,6 +4,7 @@ from typing import List, Callable, Dict
 from neat.math_util import mean
 from neat.genome import DefaultGenome
 from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
+from neuroevolution.evolution.genome_manager import GenomeManager
 
 # Type aliases for better readability
 FitnessSummarizer = Callable[[List[float]], float]
@@ -17,7 +18,7 @@ class Evaluation:
     """
     Manages the evaluation of genomes and tracks their fitness.
     """
-    def __init__(self, config, fitness_function: BasicFitness, evaluation_threshold):
+    def __init__(self, config, fitness_function: BasicFitness, evaluation_threshold, genome_manager: GenomeManager):
         """
         Initialize the evaluation manager.
 
@@ -28,8 +29,8 @@ class Evaluation:
         self.config = config
         self.fitness_function = fitness_function
         self.evaluation_threshold = evaluation_threshold
-        self.evaluated_genomes : Dict[int, DefaultGenome] = {}
         self.summarizer = self.get_fitness_summarizer()
+        self.genomes = genome_manager
 
     def get_fitness_summarizer(self) -> FitnessSummarizer:
         """
@@ -47,18 +48,18 @@ class Evaluation:
         """
         Get the best genome from the evaluated genomes.
         """
-        best = max(self.evaluated_genomes, key=lambda x: self.evaluated_genomes[x].fitness)
-        genome = self.evaluated_genomes[best]
-        return genome
+        evaluated = self.genomes.get_evaluated_genomes()
+        best = max(evaluated, key=lambda genome: genome.fitness)
+        return best
 
-    def evaluate(self, genome_id: int, genome: DefaultGenome, **kwargs):
+    def evaluate(self, genome: DefaultGenome, **kwargs):
         """
         Evaluate a genome and store its fitness.
         
         :param genome: The genome to evaluate.
         """
         self.fitness_function(genome, **kwargs)  # Assuming each genome has a fitness attribute
-        self.evaluated_genomes.update({genome_id: genome})
+        self.genomes.set_evaluated(genome.key)
     
     def threshold_reached(self) -> bool:
         """
@@ -66,13 +67,8 @@ class Evaluation:
         
         :return: True if the threshold has been reached, False otherwise.
         """
-        if len(self.evaluated_genomes) > self.evaluation_threshold:
+        if len(self.genomes.get_evaluated_genomes()) > self.evaluation_threshold:
             return True
         else:
             return False
         
-    def get_evaluated(self) -> List[int]: 
-        return list(self.evaluated_genomes.keys())
-
-    def clear_evaluated(self): 
-        self.evaluated_genomes.clear()

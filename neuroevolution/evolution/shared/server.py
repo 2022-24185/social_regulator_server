@@ -111,7 +111,7 @@ def create_app() -> Flask:
 
     @app.route('/test', methods=['GET'])
     def test_route() -> Response:
-        genome = pop.pop_manager.get_random_available_genome()
+        genome = pop.pm.get_random_available_genome()
         if genome is not None:
             net = create_network_from_genome(genome, config)
             pickled_net = pickle_network(genome.key, net)

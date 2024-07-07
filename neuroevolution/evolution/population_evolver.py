@@ -2,24 +2,25 @@
 from typing import Dict, Tuple, TYPE_CHECKING
 
 from neat.reporting import ReporterSet
-from neat.genome import DefaultGenome
+
 from neat.config import Config
 
 
 from neuroevolution.evolution.reproduction import MixedGenerationReproduction
-from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
 from neuroevolution.evolution.stagnation import MixedGenerationStagnation
-from neuroevolution.evolution.population_manager import PopulationManager
+from neuroevolution.evolution.speciation import Speciation
 from neuroevolution.evolution.evaluation import Evaluation
+from neuroevolution.evolution.population_manager import PopulationManager
+
 
 if TYPE_CHECKING:
     from neuroevolution.server.models import UserData
     from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
+    from neat.genome import DefaultGenome
+
 
 # Type aliases for better readability
-Population = Dict[int, DefaultGenome]
-SpeciesSet = MixedGenerationSpeciesSet
-State = Tuple[Population, SpeciesSet, int]
+Population = Dict[int, 'DefaultGenome']
 
 class CompleteExtinctionException(Exception):
     """Exception to raise when a population has no members."""
@@ -32,35 +33,39 @@ class PopulationEvolver:
     Manages the population lifecycle, including fitness evaluation, reproduction, and speciation.
     """
 
-    def __init__(self, config: Config, fitness_function: 'BasicFitness', evaluation_threshold: int = 5):
+    def __init__(self, config: Config, fitness_function: 'BasicFitness', evaluation_threshold: int = 10):
         self.reporters = self.create_reporter_set()
         self.config = config
         self.is_evolving = False
+        self.manager = self.create_population_manager()
         self.stagnation = self.create_stagnation()
         self.reproduction = self.create_reproduction()
-        self.pop_manager = self.create_population_manager()
+        self.speciation = self.create_speciation()
         self.evaluation = self.create_evaluation(fitness_function, evaluation_threshold)
         self.best_genome = None
 
     def create_reporter_set(self) -> ReporterSet:
         """Create the reporter set."""
         return ReporterSet()
+    
+    def create_speciation(self) -> Speciation:
+        return Speciation(self.config, self.manager)
 
     def create_stagnation(self) -> MixedGenerationStagnation:
         """Create the stagnation handler."""
-        return self.config.stagnation_type(self.config.stagnation_config, self.reporters)
+        return self.config.stagnation_type(self.config.stagnation_config, self.manager, self.reporters)
 
     def create_reproduction(self) -> MixedGenerationReproduction:
         """Create the reproduction handler."""
-        return self.config.reproduction_type(self.config, self.stagnation)
+        return self.config.reproduction_type(self.config, self.manager)
 
     def create_population_manager(self) -> PopulationManager:
         """Create the population manager."""
-        return PopulationManager(self.config)
+        return PopulationManager()
 
     def create_evaluation(self, fitness_function: 'BasicFitness', evaluation_threshold) -> Evaluation:
         """Create the evaluation handler."""
-        return Evaluation(self.config, fitness_function, evaluation_threshold)
+        return Evaluation(self.config, fitness_function, evaluation_threshold, self.manager.genomes)
 
     def create_new_population(self) -> Population:
         """
@@ -68,12 +73,13 @@ class PopulationEvolver:
         
         :return: The new population.
         """
-        pop = self.reproduction.create_new_genomes(self.config.pop_size)
-        self.pop_manager.set_new_population(pop)
+        self.manager.reset()
+        self.reproduction.create_new_genomes(self.config.pop_size)
+        self.speciation.speciate()
 
     def get_current_generation(self) -> int:
         """Get the current generation."""
-        return self.pop_manager.generation
+        return self.manager.generation
 
     def handle_receive_user_data(self, user_data: 'UserData') -> None:
         """
@@ -85,7 +91,9 @@ class PopulationEvolver:
             self.process_user_evaluation(user_data)
         if self.evaluation.threshold_reached() and not self.is_evolving:
             self.advance_population()
-            self.evaluation.clear_evaluated()
+            self.manager.genomes.clear_elites()
+            self.manager.genomes.clear_evaluated()
+            print(f"🕊️ Free genomes: {[g.key for g in self.manager.genomes.get_available_genomes()]}")
 
     def process_user_evaluation(self, user_data: 'UserData') -> None:
         """
@@ -95,16 +103,16 @@ class PopulationEvolver:
         """
         if user_data.genome_id == 0:
             return  # Assume 0 is an invalid ID or a placeholder
-        genome = self.pop_manager.update_genome_data(user_data.genome_id, user_data)
-        self.evaluation.evaluate(user_data.genome_id, genome)
+        genome = self.manager.update_genome_data(user_data.genome_id, user_data)
+        self.evaluation.evaluate(genome)
 
-    def return_random_individual(self) -> DefaultGenome: 
+    def return_random_individual(self) -> 'DefaultGenome': 
         """
         Return a random genome from the population.
 
         :return: A random genome from the population.
         """
-        return self.pop_manager.get_random_available_genome()
+        return self.manager.get_random_available_genome()
 
     def advance_population(self):
         """Advance the population to the next generation, checking for fitness goals."""
@@ -118,16 +126,18 @@ class PopulationEvolver:
         self.is_evolving = False
 
     def reproduce_and_update_generation(self):
-        """Manage the reproduction process and update generation information."""
-        evaluated = self.evaluation.get_evaluated()
-        active = self.pop_manager.get_active_species(self.stagnation, evaluated)
-        self.pop_manager.remove_evaluated(evaluated)
-        offspring = self.reproduction.reproduce_evaluated(active, evaluated)
-        self.pop_manager.update_generation(offspring)
+        """Manage the reproduction process and update generation information."""        
+        # Initial population size
+        initial_population_size = len(self.manager.genomes.get_all_genomes())
+        print(f"Initial population size: {initial_population_size}")
+        self.stagnation.update_active_species()
         self.check_and_handle_extinction()
+        self.reproduction.reproduce()
+        self.manager.update_generation()
+        self.speciation.speciate()
         self.report_generation_end()
 
-    def fitness_goal_reached(self, best_genome: DefaultGenome) -> bool:
+    def fitness_goal_reached(self, best_genome: 'DefaultGenome') -> bool:
         """
         Checks if the evolution should terminate based on the fitness criterion.
         
@@ -139,7 +149,7 @@ class PopulationEvolver:
                 return True
         return False
 
-    def track_best_genome(self, best_genome: DefaultGenome) -> None:
+    def track_best_genome(self, best_genome: 'DefaultGenome') -> None:
         """
         Tracks the best genome seen so far.
         
@@ -150,7 +160,7 @@ class PopulationEvolver:
 
     def check_and_handle_extinction(self):
         """Check for and handle potential extinction events."""
-        if not self.pop_manager.get_active_species(self.stagnation, self.evaluation.get_evaluated()):
+        if not self.manager.species.get_active_species():
             self.handle_extinction()
 
     def handle_extinction(self):
@@ -163,7 +173,7 @@ class PopulationEvolver:
             
     def terminate_evolution(self):
         """Terminate the evolutionary process upon reaching the fitness goal."""
-        self.reporters.found_solution(self.config, self.pop_manager.generation, self.best_genome)
+        self.reporters.found_solution(self.config, self.manager.generation, self.best_genome)
     
     def add_reporter(self, reporter) -> None:
         """Add a reporter to the set of reporters."""
@@ -175,8 +185,8 @@ class PopulationEvolver:
 
     def start_reporting(self) -> None:
         """Start reporting the evolution process."""
-        self.reporters.start_generation(self.pop_manager.generation)
+        self.reporters.start_generation(self.manager.generation)
 
     def report_generation_end(self):
         """Report the end of a generation to all configured reporters."""
-        self.reporters.end_generation(self.config, self.pop_manager.population, self.pop_manager.get_species_set())
+        self.reporters.end_generation(self.config, self.manager.genomes, self.manager.species)

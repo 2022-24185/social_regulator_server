@@ -10,3 +10,9 @@ class UserData(BaseModel):
     last_message_time: Optional[float] = None
     last_response: Optional[str] = None
     last_response_time: Optional[float] = None
+
+class XORData(BaseModel):
+    genome_id: int
+    inputs: list
+    outputs: list
+    expected_outputs: list

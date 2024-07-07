@@ -1,5 +1,4 @@
 """This module contains the network class that is used to communicate with the server."""
-import logging
 import pickle
 import base64
 from typing import TYPE_CHECKING, Tuple
@@ -16,7 +15,7 @@ class Network:
 
     def receive_evaluation(self, user_data: 'UserData'):
         """Receive and process evaluation data for a genome."""
-        logging.info(f"Received evaluation for genome {user_data.genome_id}")
+        print(f"Received evaluation for genome {user_data.genome_id}")
         self.experiment.receive_evaluation(user_data)
 
     def get_serialized_mediator(self) -> bytes:

@@ -6,8 +6,8 @@ import logging
 import pickle
 import neat
 import gym
-from pureples.shared.visualize import draw_net
-from pureples.shared.gym_runner import run_neat
+from neuroevolution.evolution.shared.visualize import draw_net
+from neuroevolution.evolution.shared.gym_runner import run_neat
 
 
 # Config for FeedForwardNetwork.

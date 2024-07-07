@@ -1,6 +1,6 @@
 """Module for handling elitism in the evolution process."""
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from neat.genome import DefaultGenome
 
 Member = Tuple[int, DefaultGenome]
@@ -24,7 +24,6 @@ class Elites:
         
         :param offspring_count: The number of offspring to generate.
         """
-        print(f"self.elitism: {self.elitism}")
         self.elitism_count = min(offspring_count, self.elitism)
         self.non_elites = max(0, offspring_count - self.elitism_count)
 

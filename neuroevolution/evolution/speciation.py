@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Set
 from neat.config import Config, ConfigParameter, DefaultClassConfig
 
 from neuroevolution.evolution.genome_distance_cache import GenomeDistanceCache
-from neuroevolution.evolution.shared.speciation_utils import find_closest_element
+from neuroevolution.shared.speciation_utils import find_closest_element
 from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
 from neuroevolution.evolution.population_manager import PopulationManager
 
@@ -59,8 +59,8 @@ class Speciation(DefaultClassConfig):
         :param current_generation: The current generation number.
         """
         self.set_new_representatives()
-        print(f"pop_legth: {len(self.manager.genomes.get_all_genomes())}")
-        print(f"Representatives: {self.manager.genomes.representative_genomes}")
+        #print(f"pop_legth: {len(self.manager.genomes.get_all_genomes())}")
+        #print(f"Representatives: {self.manager.genomes.representative_genomes}")
         self.partition_population()
         print(f"Species: {self.manager.species.get_all_species_ids()}")
 

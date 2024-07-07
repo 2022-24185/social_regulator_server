@@ -1,9 +1,9 @@
 """Implements the core evolution algorithm."""
-from typing import List, Callable, Dict
+from typing import List, Callable
 
 from neat.math_util import mean
 from neat.genome import DefaultGenome
-from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
+from neuroevolution.fitness_functions.basic_fitness import BasicFitness
 from neuroevolution.evolution.genome_manager import GenomeManager
 
 # Type aliases for better readability
@@ -67,7 +67,7 @@ class Evaluation:
         
         :return: True if the threshold has been reached, False otherwise.
         """
-        if len(self.genomes.get_evaluated_genomes()) > self.evaluation_threshold:
+        if len(self.genomes.get_evaluated_genomes()) >= self.evaluation_threshold:
             return True
         else:
             return False

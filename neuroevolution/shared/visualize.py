@@ -64,7 +64,7 @@ def onclick(event):
     # For now, path_to_cppn should match path in test_cppn.py, sorry.
     with open(path_to_cppn, 'rb') as cppn_input:
         cppn = pickle.load(cppn_input)
-        from neuroevolution.evolution.es_hyperneat import find_pattern
+        from neuroevolution.phenotype.es_hyperneat import find_pattern
         pattern = find_pattern(cppn, (x, y))
         draw_pattern(pattern)
 

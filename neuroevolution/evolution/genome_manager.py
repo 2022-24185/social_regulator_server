@@ -200,7 +200,7 @@ class GenomeManager:
         """
         Get all the evaluated genomes the species, sorted from highest to lowest fitness.
         """
-        gids = sorted(self.get_evaluated_genomes_in_species(species_id), key=lambda x: self.get_fitness(x), reverse=True)
+        gids = sorted(self.get_evaluated_genomes_in_species(species_id), key=self.get_fitness, reverse=True)
         return [self.get_genome(gid) for gid in gids]
     
     def get_evaluated_genomes_in_species(self, species_id) -> List[int]:

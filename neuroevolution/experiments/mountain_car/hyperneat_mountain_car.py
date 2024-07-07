@@ -7,9 +7,9 @@ import pickle
 import gym
 import neat
 from neuroevolution.evolution.shared.visualize import draw_net
-from neuroevolution.evolution.substrate import Substrate
+from neuroevolution.phenotype.substrate import Substrate
 from neuroevolution.evolution.shared.gym_runner import run_hyper
-from neuroevolution.evolution.hyperneat import create_phenotype_network
+from neuroevolution.phenotype.hyperneat import create_phenotype_network
 
 # Network input and output coordinates.
 input_coordinates = [(-0.33, -1.), (0.33, -1.)]

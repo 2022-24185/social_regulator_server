@@ -1,7 +1,7 @@
 """Fitness function that calculates the fitness of each genome based on user data."""
 from typing import TYPE_CHECKING, Dict, Optional
 from neat.genome import DefaultGenome
-from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
+from neuroevolution.fitness_functions.basic_fitness import BasicFitness
 from neuroevolution.server.models import UserData
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ Population = Dict[int, DefaultGenome]
 
 class UserEvaluatedFitness(BasicFitness):
     """Fitness function that calculates the fitness of each genome based on user data."""
-    def __init__(self, config):
+    def __init__(self, config: 'Config'):
         super().__init__(config)
     
     def __call__(self, genome: DefaultGenome, max_alive_time: Optional[int] = 0):

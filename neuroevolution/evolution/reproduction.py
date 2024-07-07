@@ -4,8 +4,7 @@ asexual reproduction from parents.
 """
 
 from itertools import count
-from math import ceil
-from typing import List, Dict, TYPE_CHECKING, Tuple
+from typing import List, Dict, Tuple
 
 from neat.config import ConfigParameter, DefaultClassConfig
 from neat.config import Config
@@ -75,7 +74,7 @@ class MixedGenerationReproduction(DefaultClassConfig):
         """
         dying_count = len(self.manager.genomes.get_dying_genomes_for_species(species.key))
         sorted_parents = self.manager.genomes.get_genomes_sorted_by_fitness(species.key)
-        print(f"💀 Species {species.key} dying count: {dying_count}")
+        #print(f"💀 Species {species.key} dying count: {dying_count}")
         if dying_count > 0:
             reproduction_cutoff = SpeciesMetrics.get_reproduction_cutoff(
                 self.reproduction_config.survival_threshold, 
@@ -94,12 +93,12 @@ class MixedGenerationReproduction(DefaultClassConfig):
     def set_elites(self, species_id) -> None: 
         expected_offspring = self.manager.species.get_expected_offspring(species_id)
         sorted_parents = self.manager.genomes.get_genomes_sorted_by_fitness(species_id)
-        print(f"Expected offspring: {expected_offspring}")
-        print(f"Sorted parents: {[p.key for p in sorted_parents]}")
+        #print(f"Expected offspring: {expected_offspring}")
+        #print(f"Sorted parents: {[p.key for p in sorted_parents]}")
         elites = self.elites.preserve(sorted_parents, expected_offspring)
         for elite in elites: 
             self.manager.genomes.set_elite(elite.key)
-        print(f"Elite count: {len(self.manager.genomes.get_elite_genomes())}")
+        #print(f"Elite count: {len(self.manager.genomes.get_elite_genomes())}")
 
     def reproduce(self) -> Population:
         """
@@ -131,7 +130,7 @@ class MixedGenerationReproduction(DefaultClassConfig):
             self.manager.genomes.remove_genome(gid)
         return len(dying)
     
-    def get_adjusted_genome_fitness(self):
+    def get_adjusted_population_fitness(self):
         """
         Adjusts the fitnesses of the offspring.
         """
@@ -154,20 +153,20 @@ class MixedGenerationReproduction(DefaultClassConfig):
         active_species = self.manager.species.get_active_species()
         min_size = self.get_minimum_species_size()
         print(f"👵 Total evaluated pop: {aging}")
-
         total_deficit = 0
         for species in active_species:
             exp_size = SpeciesMetrics.compute_expected_size(
-                self.get_adjusted_genome_fitness(),
+                self.get_adjusted_population_fitness(),
                 species.adjusted_fitness,
                 aging,
                 min_size,
             )
             deficit = SpeciesMetrics.compute_species_deficit(exp_size, aging)
-            print(f"🧠 Species {species.key} deficit: {deficit}")
-            print(f"🧠 Species {species.key} expected size: {exp_size}")
+            #print(f"🧠 Species {species.key} deficit: {deficit}")
+            #print(f"🧠 Species {species.key} expected size: {exp_size}")
             self.manager.species.set_population_deficit(species.key, deficit)
             total_deficit += deficit
+        print(f"👾 Adjusted fitnesses: {[(species.key, species.adjusted_fitness) for species in active_species]}")
 
         for species in active_species:
             expected = SpeciesMetrics.compute_offspring_count(
@@ -176,7 +175,7 @@ class MixedGenerationReproduction(DefaultClassConfig):
                 min_size,
             )
             self.manager.species.set_expected_offspring(species.key, expected)
-            print(f"🧠 Species {species.key} final offspring count: {expected}")
+            #print(f"🧠 Species {species.key} final offspring count: {expected}")
         
     def get_minimum_species_size(self) -> int:
         """Get the minimum species size."""

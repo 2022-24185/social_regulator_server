@@ -6,10 +6,10 @@ import pickle
 import logging
 import neat
 import gym
-from pureples.shared.visualize import draw_net
-from neuroevolution.evolution.substrate import Substrate
-from pureples.shared.gym_runner import run_es
-from neuroevolution.evolution.es_hyperneat import ESNetwork
+from neuroevolution.shared.visualize import draw_net
+from neuroevolution.phenotype.substrate import Substrate
+from neuroevolution.shared.gym_runner import run_es
+from neuroevolution.phenotype.es_hyperneat import ESNetwork
 
 # S, M or L; Small, Medium or Large (logic implemented as "Not 'S' or 'M' then Large").
 VERSION = "S"

@@ -1,5 +1,6 @@
 """Implements the core evolution algorithm."""
-from typing import Dict, Tuple, TYPE_CHECKING
+from typing import Dict, Tuple, TYPE_CHECKING, Any
+from pydantic import BaseModel
 
 from neat.reporting import ReporterSet
 
@@ -14,8 +15,7 @@ from neuroevolution.evolution.population_manager import PopulationManager
 
 
 if TYPE_CHECKING:
-    from neuroevolution.server.models import UserData
-    from neuroevolution.evolution.fitness_functions.basic_fitness import BasicFitness
+    from neuroevolution.fitness_functions.basic_fitness import BasicFitness
     from neat.genome import DefaultGenome
 
 
@@ -43,6 +43,7 @@ class PopulationEvolver:
         self.speciation = self.create_speciation()
         self.evaluation = self.create_evaluation(fitness_function, evaluation_threshold)
         self.best_genome = None
+        self.stop = False
 
     def create_reporter_set(self) -> ReporterSet:
         """Create the reporter set."""
@@ -81,7 +82,7 @@ class PopulationEvolver:
         """Get the current generation."""
         return self.manager.generation
 
-    def handle_receive_user_data(self, user_data: 'UserData') -> None:
+    def handle_receive_user_data(self, user_data: BaseModel) -> None:
         """
         Handle user data received from the server.
         
@@ -93,9 +94,9 @@ class PopulationEvolver:
             self.advance_population()
             self.manager.genomes.clear_elites()
             self.manager.genomes.clear_evaluated()
-            print(f"🕊️ Free genomes: {[g.key for g in self.manager.genomes.get_available_genomes()]}")
+            print(f"🕊️ Free genomes: {len([g.key for g in self.manager.genomes.get_available_genomes()])}")
 
-    def process_user_evaluation(self, user_data: 'UserData') -> None:
+    def process_user_evaluation(self, user_data: BaseModel) -> None:
         """
         Process user evaluations and update genome data.
         
@@ -120,6 +121,7 @@ class PopulationEvolver:
         best_genome = self.evaluation.get_best()
         self.track_best_genome(best_genome)
         if self.fitness_goal_reached(best_genome):
+            print("🎉 Fitness goal reached!")
             self.terminate_evolution()
         else:
             self.reproduce_and_update_generation()
@@ -134,6 +136,7 @@ class PopulationEvolver:
         self.check_and_handle_extinction()
         self.reproduction.reproduce()
         self.manager.update_generation()
+        print(f"🌎 Current generation: {self.manager.generation}")
         self.speciation.speciate()
         self.report_generation_end()
 
@@ -173,8 +176,10 @@ class PopulationEvolver:
             
     def terminate_evolution(self):
         """Terminate the evolutionary process upon reaching the fitness goal."""
-        self.reporters.found_solution(self.config, self.manager.generation, self.best_genome)
-    
+        if self.stop == False: 
+            self.stop = True
+            self.reporters.found_solution(self.config, self.manager.generation, self.best_genome)
+
     def add_reporter(self, reporter) -> None:
         """Add a reporter to the set of reporters."""
         self.reporters.add(reporter)

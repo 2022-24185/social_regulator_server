@@ -7,9 +7,9 @@ Fitness threshold set in config
 import pickle
 import neat
 import neat.nn
-from neuroevolution.evolution.substrate import Substrate
-from pureples.shared.visualize import draw_net
-from neuroevolution.evolution.es_hyperneat import ESNetwork
+from neuroevolution.phenotype.substrate import Substrate
+from neuroevolution.shared.visualize import draw_net
+from neuroevolution.phenotype.es_hyperneat import ESNetwork
 
 # S, M or L; Small, Medium or Large (logic implemented as "Not 'S' or 'M' then Large").
 VERSION = "S"

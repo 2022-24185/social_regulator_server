@@ -8,8 +8,8 @@ import pickle
 import neat
 import neat.nn
 from neuroevolution.evolution.shared.visualize import draw_net
-from neuroevolution.evolution.substrate import Substrate
-from neuroevolution.evolution.hyperneat import create_phenotype_network
+from neuroevolution.phenotype.substrate import Substrate
+from neuroevolution.phenotype.hyperneat import create_phenotype_network
 
 # Network inputs and expected outputs.
 XOR_INPUTS = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]

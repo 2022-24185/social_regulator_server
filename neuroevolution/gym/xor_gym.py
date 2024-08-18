@@ -3,8 +3,7 @@
 from typing import Any, Dict, Tuple
 
 from neat.nn.recurrent import RecurrentNetwork
-
-from neuroevolution.run_experiments.basic_gym import BasicGym
+from neuroevolution.gym.basic_gym import BasicGym
 from neuroevolution.server.models import XORData
 
 VERSION = "S"

@@ -1,6 +1,6 @@
 # server/utils.py
 # Add any utility functions here
-from neuroevolution.server.server import app
+from application import app
 from flask import jsonify
 from neuroevolution.server.errors import InvalidMediatorIdError, MissingFieldsError
 

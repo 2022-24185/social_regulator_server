@@ -3,6 +3,7 @@ from typing import Dict, Set, List, Tuple, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome
+    from pydantic import BaseModel
 
 class GenomeManager:
     def __init__(self):
@@ -123,6 +124,20 @@ class GenomeManager:
         :param genome_id: The ID of the genome to set as the representative.
         """
         self.representative_genomes[species_id] = genome_id
+
+    def update_genome_data(self, genome_id: int, data: 'BaseModel'):
+        """
+        Update specific data for a given genome.
+        
+        :param genome_id: The ID of the genome to update.
+        :param data: The data to update for the genome.
+        """
+        genome = self.get_genome(genome_id)
+        if genome:
+            genome.data = data
+            return genome
+        else:
+            raise ValueError(f"Genome ID {genome_id} not found in the population.")
 
     def assign_genome_to_species(self, genome_id: int, species_id: int) -> None:
         """

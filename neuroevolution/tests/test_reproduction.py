@@ -58,7 +58,7 @@ class TestMixedGenerationReproduction(TestCase):
         with patch('neuroevolution.evolution.reproduction.SpeciesReproduction') as mock_species_reproduction:
             instance = mock_species_reproduction.return_value
             instance.process_dying_parents.return_value = 2
-            new_population = self.reproduction.reproduce_evaluated(active_species, selected_genome_ids)
+            new_population = self.reproduction.reproduce(active_species, selected_genome_ids)
             self.assertEqual(len(new_population), 2)
             mock_species_reproduction.assert_called_once()
 

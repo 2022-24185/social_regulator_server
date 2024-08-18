@@ -3,14 +3,14 @@ import pickle
 import base64
 from typing import TYPE_CHECKING, Tuple
 
-from neuroevolution.run_experiments.experiment import SimulatedUserEvalExperiment
+from neuroevolution.run_experiments.basic_experiment import BasicExperiment
 
 if TYPE_CHECKING:
     from neuroevolution.server.models import UserData
     from neat.nn import RecurrentNetwork
 
 class Network:
-    def __init__(self, experiment: SimulatedUserEvalExperiment):
+    def __init__(self, experiment: BasicExperiment):
         self.experiment = experiment
 
     def receive_evaluation(self, user_data: 'UserData'):

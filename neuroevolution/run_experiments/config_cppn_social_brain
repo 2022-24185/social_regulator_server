@@ -78,19 +78,6 @@ weight_mutate_power     = 0.5
 weight_mutate_rate      = 0.8
 weight_replace_rate     = 0.1
 
-[DefaultSpeciesSet]
-compatibility_threshold = 3.0
-
-[DefaultStagnation]
-species_fitness_func = max
-max_stagnation       = 20
-species_elitism      = 3
-
-[DefaultReproduction]
-elitism            = 3
-survival_threshold = 0.2
-min_species_size   = 2
-
 [Speciation]
 compatibility_threshold = 2
 

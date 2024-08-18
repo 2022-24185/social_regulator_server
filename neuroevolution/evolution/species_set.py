@@ -1,8 +1,7 @@
 """Divides the population into species based on genomic distances."""
 import sys
-from typing import Dict, List, Set, Tuple, Callable, TYPE_CHECKING
+from typing import Dict, List, Set, Tuple, TYPE_CHECKING
 from neuroevolution.evolution.species import MixedGenerationSpecies
-from neuroevolution.evolution.genome_manager import GenomeManager
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome

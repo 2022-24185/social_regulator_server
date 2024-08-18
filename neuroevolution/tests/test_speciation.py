@@ -12,7 +12,7 @@ class TestableSpeciation(Speciation):
     def create_distance_cache(self, config):
         return self.mock_cache
     
-    def create_species_set(self):
+    def create_species_manager(self):
         return self.mock_species_set
     
 class TestSpeciation(unittest.TestCase): 
@@ -24,7 +24,7 @@ class TestSpeciation(unittest.TestCase):
     def test_initialization(self):
         # Verify initialization values and dependencies are set up correctly
         self.assertIs(self.speciation.distance_cache, self.speciation.mock_cache)
-        self.assertIs(self.speciation.species_set, self.speciation.mock_species_set)
+        self.assertIs(self.speciation.sm, self.speciation.mock_species_set)
         self.assertEqual(self.speciation.compatibility_threshold, 3.0)
 
     def test_speciate(self):
@@ -82,7 +82,7 @@ class TestSetNewRepresentatives(unittest.TestCase):
 
 
         # Execute
-        new_rep, updated_unspeciated = self.speciation.extract_new_representative_id(unspeciated, lambda x, y: abs(x-y), None)
+        new_rep, updated_unspeciated = self.speciation.extract_new_representative(unspeciated, lambda x, y: abs(x-y), None)
 
         # Assert
         self.assertEqual(new_rep, 1)

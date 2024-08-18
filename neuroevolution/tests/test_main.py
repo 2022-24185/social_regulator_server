@@ -1,8 +1,8 @@
 # tests/test_main.py
 from fastapi.testclient import TestClient
-from neuroevolution.server.server import app
+from application import app
 import logging, pytest, random, pickle, neat, base64
-from neuroevolution.evolution.phenotype_creator import PhenotypeCreator
+from neuroevolution.phenotype.phenotype_creator import PhenotypeCreator
 
 client = TestClient(app)
 

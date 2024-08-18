@@ -60,20 +60,6 @@ class PopulationManager:
         self.generation += 1
         self.species.set_generation(self.generation)
         return self.generation
-
-    def update_genome_data(self, genome_id: int, data: 'UserData'):
-        """
-        Update specific data for a given genome.
-        
-        :param genome_id: The ID of the genome to update.
-        :param data: The data to update for the genome.
-        """
-        genome = self.genomes.get_genome(genome_id)
-        if genome:
-            genome.data = data
-            return genome
-        else:
-            raise ValueError(f"Genome ID {genome_id} not found in the population.")
                     
     def get_random_available_genome(self) -> DefaultGenome:
         """
@@ -87,3 +73,4 @@ class PopulationManager:
         genome = random.choice(available)
         self.genomes.set_unavailable(genome.key)
         return genome
+

@@ -34,7 +34,7 @@ class TestEvaluation(unittest.TestCase):
         genome2 = mock_genome()
         genome2.fitness = 2
         self.evaluation.evaluated_genomes = {genome1: genome1, genome2: genome2}
-        best = self.evaluation.get_best()
+        best = self.evaluation.get_fitness_stats()
         self.assertEqual(best, genome2)
 
     @patch('neat.genome.DefaultGenome')

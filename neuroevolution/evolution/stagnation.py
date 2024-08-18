@@ -11,6 +11,7 @@ from neuroevolution.evolution.species import MixedGenerationSpecies
 
 if TYPE_CHECKING: 
     from neuroevolution.evolution.species_set import MixedGenerationSpeciesSet
+    from neuroevolution.lab.note_taker import NoteTaker
 
 SpeciesData = List[Tuple[int, MixedGenerationSpecies]]
 StagnationResult = List[Tuple[int, MixedGenerationSpecies, bool]]
@@ -31,12 +32,12 @@ class MixedGenerationStagnation(DefaultClassConfig):
             ],
         )
 
-    def __init__(self, config: Config, population_manager: PopulationManager, reporters):
+    def __init__(self, config: Config, population_manager: PopulationManager, reporter: 'NoteTaker'):
         # pylint: disable=super-init-not-called
         self.stagnation_config = config
         self.species_fitness_func = self.set_fitness_func(config)
         self.manager = population_manager
-        self.reporters = reporters
+        self.reporter = reporter
 
     def set_fitness_func(self, config):
         """

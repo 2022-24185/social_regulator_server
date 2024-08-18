@@ -2,12 +2,12 @@ import unittest
 from unittest.mock import Mock, MagicMock, patch
 from neat.config import Config
 from neat.genome import DefaultGenome
-from neuroevolution.evolution.population_evolver import PopulationEvolver, CompleteExtinctionException
+from neuroevolution.evolution.population_evolver import Evolution, CompleteExtinctionException
 from neuroevolution.evolution.population_manager import PopulationManager
 from neuroevolution.evolution.stagnation import MixedGenerationStagnation
 from neuroevolution.evolution.reproduction import MixedGenerationReproduction
 
-class TestablePopulationEvolver(PopulationEvolver):
+class TestablePopulationEvolver(Evolution):
     def __init__(self, *args, **kwargs):
         self.mock_reporters = Mock()
         self.mock_stagnation = Mock()
@@ -46,7 +46,7 @@ class TestPopulationEvolverInitialization(unittest.TestCase):
         self.assertIs(self.evolver.reporters, self.evolver.mock_reporters)
         self.assertIs(self.evolver.stagnation, self.evolver.mock_stagnation)
         self.assertIs(self.evolver.reproduction, self.evolver.mock_reproduction)
-        self.assertIs(self.evolver.pop_manager, self.evolver.mock_pop_manager)
+        self.assertIs(self.evolver.pm, self.evolver.mock_pop_manager)
         self.assertIs(self.evolver.evaluation, self.evolver.mock_evaluation)
 
     def test_create_new_population(self):
@@ -70,7 +70,7 @@ class TestPopulationEvolverInitialization(unittest.TestCase):
         self.evolver.mock_evaluation.threshold_reached.return_value = True
         
         # Action: Call the method under test
-        self.evolver.handle_receive_user_data(user_data)
+        self.evolver.receive_evaluation(user_data)
         
         # Assert: Check that update_genome_data was called correctly
         self.evolver.mock_pop_manager.update_genome_data.assert_called_once_with(1, user_data)
@@ -84,7 +84,7 @@ class TestPopulationEvolverInitialization(unittest.TestCase):
         user_data = MagicMock(genome_id=0)
         
         # Action: Call the method under test
-        self.evolver.handle_receive_user_data(user_data)
+        self.evolver.receive_evaluation(user_data)
         
         # Assert: Check that update_genome_data was not called
         self.evolver.mock_pop_manager.update_genome_data.assert_not_called()

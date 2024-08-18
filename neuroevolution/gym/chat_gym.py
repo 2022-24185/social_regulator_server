@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 from neat.nn.recurrent import RecurrentNetwork
 
 from neuroevolution.server.models import UserData
-from neuroevolution.run_experiments.basic_gym import BasicGym
+from neuroevolution.gym.basic_gym import BasicGym
 
 INPUT_COORDINATES = [(-0.33, -1.), (0, 0), (0.33, 1.)]
 OUTPUT_COORDINATES = [(-0.5, 1.), (0., -1.), (0., -1.), (0.5, 1.)]

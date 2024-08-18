@@ -2,8 +2,12 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class UserData(BaseModel):
+class ExperimentData(BaseModel):
+    experiment_id: int
     genome_id: int
+
+class UserData(BaseModel):
+    experiment_data: ExperimentData
     time_since_startup: float
     user_rating: int
     last_message: Optional[str] = None
@@ -12,7 +16,15 @@ class UserData(BaseModel):
     last_response_time: Optional[float] = None
 
 class XORData(BaseModel):
-    genome_id: int
+    experiment_data: ExperimentData
     inputs: list
     outputs: list
     expected_outputs: list
+
+class PhenotypeData(BaseModel):
+    experiment_data: ExperimentData
+    new_mediator: str
+
+class ResponseModel(BaseModel):
+    phenotype: PhenotypeData
+    message: str

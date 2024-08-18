@@ -5,9 +5,13 @@ graphviz
 matplotlib
 gym
 flask
-fastapi 
-uvicorn
 pytest 
+pandas
 coverage
 pylint
 httpx
+# elasticbeanstalk
+fastapi 
+gunicorn
+uvicorn
+

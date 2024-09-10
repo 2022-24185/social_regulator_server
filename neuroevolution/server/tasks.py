@@ -1,11 +1,11 @@
 # neuroevolution/server/tasks.py
 import logging
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, Optional 
 from neuroevolution.server.networker import Network
 from neuroevolution.run_experiments.async_experiment import AsyncExperiment
 from neuroevolution.server.errors import MissingGenomeError
 from neuroevolution.server.data_storage import SessionData
-from neuroevolution.lab.lab import Lab
+from neuroevolution.lab.lab import Lab, LabError
 from neuroevolution.server.config import Config
 
 if TYPE_CHECKING:
@@ -24,42 +24,89 @@ lab.add_parameterized_experiment(Config.EXPERIMENT, parameters)
 lab.instanciate_experiments()
 session_data = SessionData('session_data.csv')
 
-def process_user_data(data: 'UserData'):
+def process_user_data(user_data: 'UserData'):
     """
-    Process user data by storing it in the session data and sending it to the network for evaluation.
+    Store and process user data, send it for evaluation.
     """
-    print(f"Processing user data: {data}")
-    session_data.store_session_data(data)
-    lab.return_individual_to_experiment(data)
-    print(f"User data processed: {data}")
+    try:
+        logging.info(f"Processing user data: {user_data}")
+        session_data.store_session_data(user_data)
+        lab.return_individual_to_experiment(user_data)
+        logging.info("User data processed successfully.")
+    except Exception as e:
+        logging.error(f"Error processing user data: {e}")
 
-def swap_out_mediator(user_data: 'UserData') -> 'PhenotypeData':
+def swap_out_mediator(user_data: 'UserData') -> Optional['PhenotypeData']:
     """
-    Request a new mediator genome to be generated.
+    Replace the mediator genome based on user data.
     """
-    print(f"Requesting new mediator genome for mediator ID: {user_data.experiment_data.genome_id}")
-    session_data.store_session_data(user_data)
-    print(f"User data stored: {user_data}")
-    process_user_data(user_data)
-    new_mediator = lab.sample_random_experiment()
-    print(f"User data evaluated: {user_data}"[:100])
-    if not new_mediator.new_mediator: 
-        logging.error("Failed to fetch new genome")
-        raise MissingGenomeError("Failed to fetch new genome")
-    print(f"New mediator provided.")
-    return new_mediator
+    try:
+        logging.info(f"Swapping out mediator for genome ID: {user_data.experiment_data.genome_id}")
+        session_data.store_session_data(user_data)
+        process_user_data(user_data)
+        new_mediator = lab.sample_random_experiment()
+        
+        if not new_mediator.new_mediator:
+            raise MissingGenomeError("Failed to fetch new genome")
+        
+        logging.info("New mediator generated successfully.")
+        return new_mediator
+    
+    except MissingGenomeError as e:
+        logging.error(f"Missing genome: {e}")
+        return None
 
-def get_new_mediator() -> 'PhenotypeData':
+    except Exception as e:
+        logging.error(f"Error swapping mediator: {e}")
+        return None
+
+def get_new_mediator() -> Optional['PhenotypeData']:
     """
-    Request a new mediator genome to be generated.
+    Get a new mediator genome.
     """
-    print("Requesting new mediator genome")
-    new_mediator = lab.sample_random_experiment()
-    if not new_mediator.new_mediator: 
-        logging.error("Failed to fetch new genome")
-        raise MissingGenomeError("Failed to fetch new genome")
-    print(f"New mediator provided.")
-    return new_mediator
+    try:
+        logging.info("Requesting new mediator genome.")
+        new_mediator = lab.sample_random_experiment()
+        
+        if not new_mediator.new_mediator:
+            raise MissingGenomeError("Failed to fetch new genome")
+        
+        logging.info("New mediator provided successfully.")
+        return new_mediator
+    
+    except MissingGenomeError as e:
+        logging.error(f"Missing genome: {e}")
+        return None
+
+    except Exception as e:
+        logging.error(f"Error getting new mediator: {e}")
+        return None
+    
+def get_experiment_statuses() -> dict:
+    """
+    Retrieve the current experiment status, including experiment details.
+    """
+    try:
+        # Get statuses as JSON from the Lab instance
+        statuses = lab.get_experiment_statuses()
+        return statuses  # FastAPI automatically converts it to JSON
+    except LabError as e:
+        logging.error(f"Lab error occurred: {e}")
+        raise Exception(status_code=500, detail="Error fetching experiment statuses") from e
+    except Exception as e:
+        logging.error(f"Unexpected error occurred: {e}")
+        raise Exception(status_code=500, detail="Unexpected server error") from e
+
+def reset_experiment():
+    """
+    Reset the current experiment.
+    """
+    try:
+        logging.info("Resetting the experiment...")
+        lab.reset_experiment()  # Assuming this method exists in Lab
+        logging.info("Experiment reset successfully.")
+    except Exception as e:
+        logging.error(f"Error resetting experiment: {e}")
 
 def run_evolution():
     """

@@ -8,6 +8,7 @@ from neuroevolution.data_models.experiment_data_models import ExperimentDataMode
 import pandas as pd
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 
 def pydantic_to_dataframe(data: List[BaseModel], fields: List[str]) -> pd.DataFrame:
     """
@@ -38,7 +39,7 @@ def collect_data(models: List[BaseModel], field: str, fields: List[str], nested_
     """
     data = []
     for model in models:
-        items = getattr(model, field)
+        items = getattr(model, field, [])
         if nested_field:
             items = [getattr(item, nested_field) for item in items if getattr(item, nested_field, None)]
         data.extend(items)
@@ -52,21 +53,24 @@ class NoteTaker(BaseReporter):
         self.current_generation = 0
         self.current_data = ExperimentDataModel()
         self.data_models: List[ExperimentDataModel] = []
+        logging.info(f"NoteTaker initialized for experiment {experiment_id}")
 
     def start_generation(self, generation_summary: GenerationSummaryData):
         """Called at the start of each generation."""
-        self.current_generation = generation_summary.generation
-        self.current_data.generations.append(generation_summary)
+        try:
+            self.current_generation = generation_summary.generation
+            self.current_data.generations.append(generation_summary)
+            logging.info(f"Started generation {self.current_generation} for experiment {self.experiment_id}")
+        except Exception as e:
+            logging.error(f"Error starting generation {self.current_generation}: {e}")
+            raise
 
     def end_generation(self, generation_update: GenerationSummaryData):
         """Called at the end of each generation."""
-        this_gen = generation_update.generation
-        generation_summary = self.current_data.generations[this_gen]
+        generation_summary = self.current_data.generations[self.current_generation]
         generation_summary.population_end_size = generation_update.population_end_size
         generation_summary.active_species_count = generation_update.active_species_count
-        print(f"Generation {this_gen} complete.")
-        print(f"Species: {generation_update.active_species_count}")
-        print(f"Population size: {generation_update.population_end_size}")
+        logging.info(f"Generation {self.current_generation} completed. Population size: {generation_update.population_end_size}")
 
     def post_evaluate(self, generation: int, fitness_stats: FitnessStats):
         generation_summary = self.current_data.generations[generation]
@@ -93,20 +97,47 @@ class NoteTaker(BaseReporter):
     def info(self, msg):
         pass
 
-    def end_experiment(self): 
+    def end_experiment(self):
+        """Finalize and store experiment data when the experiment ends."""
         self.data_models.append(self.current_data)
-        self.current_data = None
+        self.current_data = ExperimentDataModel()
+        logging.info(f"Experiment {self.experiment_id} ended.")
 
-    def get_statistics(self): 
-        pass
+    def get_statistics(self) -> Dict[str, Any]:
+        """Retrieve summarized statistics for the experiment."""
+        try:
+            stats = {
+                "experiment_id": self.experiment_id,
+                "total_generations": len(self.current_data.generations),
+                "fitness_statistics": [gen.fitness_summary.model_dump() for gen in self.current_data.generations if gen.fitness_summary]
+            }
+            logging.info(f"Statistics for experiment {self.experiment_id} retrieved.")
+            return stats
+        except Exception as e:
+            logging.error(f"Error retrieving statistics for experiment {self.experiment_id}: {e}")
+            raise
 
     def get_data(self) -> List[ExperimentDataModel]:
-        return self.data_models
+        """Retrieve all stored data models."""
+        try:
+            logging.info(f"Retrieving data for experiment {self.experiment_id}")
+            return self.data_models
+        except Exception as e:
+            logging.error(f"Error retrieving data for experiment {self.experiment_id}: {e}")
+            raise
     
     def save_to_file(self, filename: str):
-        """Saves the collected data to a file."""
-        with open(filename, 'w') as f:
-            f.write(self.current_data.model_dump_json())
+        """Save the current experiment data to a file."""
+        try:
+            with open(filename, 'w') as f:
+                f.write(self.current_data.model_dump_json())
+            logging.info(f"Data saved to {filename}")
+        except IOError as e:
+            logging.error(f"Error saving data to file {filename}: {e}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error saving data to file {filename}: {e}")
+            raise
 
     def __repr__(self):
         return f"NoteTaker(experiment_id={self.experiment_id})"

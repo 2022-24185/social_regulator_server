@@ -21,7 +21,7 @@ class Evaluation:
     """
     Manages the evaluation of genomes and tracks their fitness.
     """
-    def __init__(self, config, fitness_function: BasicFitness, genome_manager: GenomeManager):
+    def __init__(self, config, fitness_function: BasicFitness, genome_manager: GenomeManager, threshold: int = 0):
         """
         Initialize the evaluation manager.
 
@@ -29,7 +29,7 @@ class Evaluation:
         :param fitness_function: The fitness function to evaluate genomes.
         :param evaluation_threshold: The number of evaluations to perform before advancing the population.
         """
-        self.threshold = 0 # default is to always advance to next generation
+        self.threshold = threshold # default is to always advance to next generation
         self.config = config
         self.fitness_function = fitness_function
         self.summarizer = self.get_fitness_summarizer()

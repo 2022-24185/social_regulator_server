@@ -77,7 +77,7 @@ class ExperimentConfig(BaseModel):
     fitness_class: Type
     gym_class: Type
     fitness_criterion: str
-    fitness_threshold: float = Field(..., gt=0.0, le=1.0)
+    fitness_threshold: float = Field(..., gt=0.0, le=5.0)
     reset_on_extinction: bool
     additional_config: Optional[BaseModel] = None
 

@@ -1,9 +1,11 @@
 """ This module contains the GenomeManager class, which is responsible for managing the states of the genomes in the population. """
 from typing import Dict, Set, List, Tuple, Optional, TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from neat.genome import DefaultGenome
     from pydantic import BaseModel
+    from neuroevolution.lab.note_taker import NoteTaker
 
 class GenomeManager:
     def __init__(self):
@@ -15,6 +17,7 @@ class GenomeManager:
         self.unspeciated_genomes: Set[int] = set()
         self.genome_species_map: Dict[int, int] = {}
         self.alive_genomes_count: int = 0
+        self.reporter: 'NoteTaker' = None
 
     def reset(self) -> None:
         """
@@ -28,6 +31,18 @@ class GenomeManager:
         self.unspeciated_genomes.clear()
         self.genome_species_map.clear()
         self.alive_genomes_count = 0
+
+    def update_pool_status(self):
+        """Update the pool overview with counts for available, interacting, and evaluated genomes."""
+        if self.reporter:
+            self.reporter.update_pool_overview(
+                available=len(self.free_genomes),
+                interacting=len(self.genomes)-len(self.free_genomes),
+                evaluated=len(self.evaluated_genomes)
+            )
+
+    def add_reporter(self, reporter: 'NoteTaker') -> None:
+        self.reporter = reporter
 
     def add_genome(self, genome_id: int, genome: 'DefaultGenome') -> None:
         """
@@ -49,6 +64,7 @@ class GenomeManager:
         """
         for genome_id, genome in genomes.items():
             self.add_genome(genome_id, genome)
+        self.update_pool_status()
 
     def remove_genome(self, genome_id: int) -> None:
         """
@@ -68,6 +84,7 @@ class GenomeManager:
                     del self.representative_genomes[species_id]
                 del self.genome_species_map[genome_id]
             self.alive_genomes_count -= 1
+        self.update_pool_status()
 
     def remove_genomes_in_species(self, species_id: int) -> None: 
         """
@@ -84,6 +101,7 @@ class GenomeManager:
         Clear all evaluated genomes.
         """
         self.evaluated_genomes.clear()
+        self.update_pool_status()
     
     def clear_elites(self) -> None:
         """
@@ -98,6 +116,7 @@ class GenomeManager:
         :param genome_id: The ID of the genome to remove.
         """
         self.free_genomes.discard(genome_id)
+        self.update_pool_status()
 
     def set_evaluated(self, genome_id: int) -> None:
         """
@@ -105,7 +124,36 @@ class GenomeManager:
 
         :param genome_id: The ID of the genome to mark as evaluated.
         """
-        self.evaluated_genomes.add(genome_id)
+        try:
+            # Check if the genome exists
+            genome = self.get_genome(genome_id)
+            if not genome:
+                logging.error(f"Genome ID {genome_id} not found in the population.")
+                return  # Skip further processing if genome is missing
+            if genome_id not in self.genomes.keys() - self.free_genomes:
+                logging.error(f"Genome {genome_id} is not available for evaluation.")
+                return
+            
+            fitness = self.get_fitness(genome_id)
+            if fitness is None:
+                logging.error(f"Genome {genome_id} has no valid fitness value.")
+                return  # Optionally raise an error or skip
+
+            self.evaluated_genomes.add(genome_id)
+
+            try:
+                self.reporter.track_evaluated_genome(genome_id, fitness)
+                logging.info(f"Genome {genome_id} successfully tracked as evaluated.")
+            except Exception as e:
+                logging.error(f"Error tracking evaluated genome {genome_id}: {e}")
+                raise ValueError(f"Failed to track genome {genome_id} in reporter.") from e
+
+            self.update_pool_status()
+
+        except Exception as e:
+            logging.error(f"Error setting genome {genome_id} as evaluated: {e}")
+            raise ValueError(f"Failed to set genome {genome_id} as evaluated.") from e
+
 
     def set_elite(self, genome_id: int) -> None:
         """
@@ -132,13 +180,26 @@ class GenomeManager:
         :param genome_id: The ID of the genome to update.
         :param data: The data to update for the genome.
         """
-        genome = self.get_genome(genome_id)
-        if genome:
-            genome.data = data
-            return genome
-        else:
-            raise ValueError(f"Genome ID {genome_id} not found in the population.")
+        try:
+            # Check if the genome exists
+            genome = self.get_genome(genome_id)
+            if not genome:
+                logging.error(f"Genome ID {genome_id} not found in the population.")
+                raise ValueError(f"Genome ID {genome_id} not found in the population.")
 
+            # Update genome data
+            genome.data = data
+            logging.info(f"Genome {genome_id} updated successfully with new data.")
+            return genome
+
+        except ValueError as ve:
+            logging.error(f"ValueError while updating genome {genome_id}: {ve}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error updating genome {genome_id}: {e}")
+            raise RuntimeError(f"Failed to update genome {genome_id}: {e}") from e
+
+        
     def assign_genome_to_species(self, genome_id: int, species_id: int) -> None:
         """
         Assign a genome to a species.

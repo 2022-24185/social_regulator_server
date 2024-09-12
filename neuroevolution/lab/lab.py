@@ -11,6 +11,8 @@ from neuroevolution.lab.note_taker import NoteTaker
 # from neuroevolution.lab.visualiser import ExperimentVisualizer
 from neuroevolution.server.models import ExperimentData, UserData, PhenotypeData, FullExperimentConfig
 
+# pylint: disable=logging-fstring-interpolation
+
 class LabError(Exception):
     """Base class for all lab-related errors."""
     pass
@@ -154,7 +156,7 @@ class Lab:
         for experiment_id, experiment in self.experiments.items():
             try:
                 reporter = experiment.get_reporter()
-                statuses[experiment_id] = reporter.get_statistics()
+                statuses[experiment_id] = reporter.get_data()
             except Exception as e:
                 logging.error(f"Error fetching experiment status for {experiment_id}: {e}")
                 raise LabError(f"Failed to get status for experiment {experiment_id}") from e
@@ -168,7 +170,7 @@ class Lab:
 
         try:
             reporter = self.experiments[experiment_id].get_reporter()
-            return reporter.get_statistics()
+            return reporter.get_data()
         except Exception as e:
             logging.error(f"Error fetching experiment status for {experiment_id}: {e}")
             raise LabError(f"Failed to get status for experiment {experiment_id}")

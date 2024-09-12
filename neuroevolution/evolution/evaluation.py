@@ -1,6 +1,7 @@
 """Implements the core evolution algorithm."""
 from typing import List, Callable
 from pydantic import BaseModel
+import logging
 
 from neat.math_util import mean
 from neat.genome import DefaultGenome
@@ -75,15 +76,36 @@ class Evaluation:
         """
         Process user evaluations and update genome data.
         
-        :param user_data: The user data to process.
+        :param gym_data: The user data to process.
         """
-        if not gym_data: 
-            raise ValueError("No data received from the server.")
-        if gym_data.experiment_data.genome_id == 0:
-            return  # Assume 0 is an invalid ID or a placeholder
-        genome = self.genomes.update_genome_data(gym_data.experiment_data.genome_id, gym_data)
-        self.evaluate(genome)
+        try:
+            # Validate the gym_data object
+            if not gym_data:
+                logging.error("No data received from the server.")
+                raise ValueError("No data received from the server.")
 
+            # Validate the genome_id
+            genome_id = gym_data.experiment_data.genome_id
+            if genome_id == 0:
+                logging.warning(f"Received invalid genome_id: {genome_id}. Ignoring this data.")
+                return  # Skip processing for invalid genome_id
+
+            # Update genome data with the provided user data
+            genome = self.genomes.update_genome_data(genome_id, gym_data)
+            if genome:
+                logging.info(f"Genome {genome_id} updated successfully with user data.")
+                self.evaluate(genome)
+            else:
+                logging.error(f"Failed to update genome {genome_id} with user data.")
+
+        except ValueError as ve:
+            logging.error(f"ValueError while processing gym data for genome {genome_id}: {ve}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error processing gym data for genome {genome_id}: {e}")
+            raise RuntimeError(f"Failed to process gym data for genome {genome_id}: {e}") from e
+
+        
     def evaluate(self, genome: DefaultGenome, **kwargs):
         """
         Evaluate a genome and store its fitness.

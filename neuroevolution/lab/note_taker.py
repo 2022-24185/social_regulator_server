@@ -3,12 +3,14 @@ import pandas as pd
 from neat.reporting import BaseReporter
 from neat.genome import DefaultGenome
 
-from neuroevolution.data_models.experiment_data_models import ExperimentDataModel, GenerationSummaryData, FitnessStats
+from neuroevolution.data_models.experiment_data_models import ExperimentDataModel, GenerationSummaryData, FitnessStats, FitnessContributionData, SelectiveEvaluationData, PoolStatusData
 
 import pandas as pd
 from typing import List, Optional
 from pydantic import BaseModel
 import logging
+from uuid import uuid4
+import time
 
 def pydantic_to_dataframe(data: List[BaseModel], fields: List[str]) -> pd.DataFrame:
     """
@@ -82,6 +84,37 @@ class NoteTaker(BaseReporter):
         print(f"Fitness variance: {fitness_stats.fitness_variance}")
         print(f"Fitness quartiles: {fitness_stats.fitness_quartiles}")
 
+    def track_evaluated_genome(self, genome_id: int, fitness: float, contributions: List[Dict[str, Any]] = None):
+        """Track each evaluated genome along with its fitness and contributions."""
+        try:
+            fitness_contributions = [
+                FitnessContributionData(**contribution) for contribution in contributions
+            ] if contributions else []
+            evaluation_data = SelectiveEvaluationData(
+                event_id=str(uuid4()),
+                timestamp=time.time(),
+                genome_id=genome_id,
+                generation=self.current_generation,
+                fitness=fitness,
+                fitness_contributions=fitness_contributions
+            )
+            self.current_data.selective_evaluations.append(evaluation_data)
+            logging.info(f"Tracked genome {genome_id} with fitness {fitness}.")
+        except Exception as e:
+            logging.error(f"Error tracking genome {genome_id}: {e}")
+            raise
+
+    def update_pool_overview(self, available: int, interacting: int, evaluated: int):
+        """Update the current pool overview (available, interacting, evaluated)."""
+        try:
+            logging.info(f"Updating pool overview for experiment {self.experiment_id}.")
+            self.current_data.pool_status.available_individuals = available
+            self.current_data.pool_status.interacting_individuals = interacting
+            self.current_data.pool_status.evaluated_individuals = evaluated
+        except Exception as e:
+            logging.error(f"Error updating pool overview for experiment {self.experiment_id}: {e}")
+            raise
+
     def post_reproduction(self, config, population, species):
         pass
 
@@ -117,11 +150,11 @@ class NoteTaker(BaseReporter):
             logging.error(f"Error retrieving statistics for experiment {self.experiment_id}: {e}")
             raise
 
-    def get_data(self) -> List[ExperimentDataModel]:
+    def get_data(self) -> ExperimentDataModel:
         """Retrieve all stored data models."""
         try:
             logging.info(f"Retrieving data for experiment {self.experiment_id}")
-            return self.data_models
+            return self.current_data
         except Exception as e:
             logging.error(f"Error retrieving data for experiment {self.experiment_id}: {e}")
             raise

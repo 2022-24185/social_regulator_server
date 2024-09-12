@@ -94,11 +94,11 @@ class Config:
         experiment_config=ExperimentConfig(
             experiment_class=OnlineExperiment,
             num_generations=5,
-            pop_size=150,
+            pop_size=30,
             fitness_class=UserEvaluatedFitness,
             gym_class=OnlineGym,
             fitness_criterion='max',
-            fitness_threshold=0.975,
+            fitness_threshold=5,
             reset_on_extinction=False,
             additional_config=AsyncEvalConfig(
                 eval_pool_size=10,

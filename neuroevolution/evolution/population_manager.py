@@ -25,6 +25,7 @@ class PopulationManager:
         self.generation = 0
         self.genomes = self.create_genome_manager()
         self.species = self.create_species_manager()
+        self.reporter = None
 
     def create_genome_manager(self) -> GenomeManager:
         """
@@ -60,6 +61,15 @@ class PopulationManager:
         self.generation += 1
         self.species.set_generation(self.generation)
         return self.generation
+    
+    def add_reporter(self, reporter):
+        """
+        Add a reporter to the population manager.
+
+        :param reporter: The reporter to add.
+        """
+        self.reporter = reporter
+        self.genomes.add_reporter(reporter)
                     
     def get_random_available_genome(self) -> DefaultGenome:
         """

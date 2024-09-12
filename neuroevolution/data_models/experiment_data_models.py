@@ -18,6 +18,12 @@ class FitnessStats(BaseModel):
     fitness_variance: float = 0.0
     fitness_quartiles: List[float] = Field(default_factory=list)  # 25th, 50th, and 75th percentiles
 
+class PoolStatusData(BaseModel):
+    """Data model to track the real-time status of the pool with counts."""
+    available_individuals: int = 0
+    interacting_individuals: int = 0
+    evaluated_individuals: int = 0
+
 class SpeciesFitnessStats(FitnessStats):
     """Fitness statistics for a specific species."""
     species_id: int
@@ -109,6 +115,7 @@ class FailureExceptionData(EventData):
 class ExperimentDataModel(BaseModel):
     """Overall model to track evolutionary algorithm experiment data."""
     generations: List[GenerationSummaryData] = []
+    pool_status: PoolStatusData = Field(default_factory=PoolStatusData)
     selective_evaluations: List[SelectiveEvaluationData] = Field(default_factory=list)
     reproductions: List[ReproductionData] = Field(default_factory=list)
     species_fitness_stats: List[SpeciesFitnessStats] = Field(default_factory=list)

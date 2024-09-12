@@ -1,8 +1,10 @@
 """Implements the core evolution algorithm."""
 from typing import Dict, Tuple, TYPE_CHECKING, Any
 from pydantic import BaseModel
+import logging
 
 from neat.config import Config
+from neuroevolution.server.errors import EvolutionError
 
 
 from neuroevolution.evolution.reproduction import MixedGenerationReproduction
@@ -83,19 +85,57 @@ class Evolution:
 
     def advance_population(self):
         """Advance the population to the next generation, checking for fitness goals."""
-        self.is_evolving = True
-        stats = self.evaluation.get_fitness_stats()
-        self.reporter.post_evaluate(self.get_current_generation(), stats)
-        #self.track_best_genome(best_genome)
-        if self.fitness_goal_reached(stats.best_genome_fitness):
-            print("🎉 Fitness goal reached!")
-            self.terminate_evolution()
-        else:
-            self.report_generation_end()
-            self.reproduce_and_update_generation()
-        self.manager.genomes.clear_elites()
-        self.manager.genomes.clear_evaluated()
-        self.is_evolving = False
+        try:
+            self.is_evolving = True
+            logging.info("Starting population evolution for the next generation.")
+
+            # Get fitness stats and log any potential issues
+            try:
+                stats = self.evaluation.get_fitness_stats()
+                logging.info(f"Fitness stats for current generation: Best Fitness = {stats.best_genome_fitness}")
+            except Exception as e:
+                logging.error(f"Error retrieving fitness stats: {e}")
+                raise EvolutionError(f"Failed to retrieve fitness stats: {e}") from e
+
+            # Report the evaluation results
+            try:
+                self.reporter.post_evaluate(self.get_current_generation(), stats)
+                logging.info("Reported fitness stats to NoteTaker.")
+            except Exception as e:
+                logging.error(f"Error reporting fitness stats for generation {self.get_current_generation()}: {e}")
+                raise EvolutionError(f"Failed to report fitness stats: {e}") from e
+
+            # Check if fitness goal is reached and handle termination
+            if self.fitness_goal_reached(stats.best_genome_fitness):
+                logging.info("🎉 Fitness goal reached! Terminating evolution.")
+                self.terminate_evolution()
+            else:
+                try:
+                    logging.info("Fitness goal not reached. Reporting generation end and advancing population.")
+                    self.report_generation_end()
+                    self.reproduce_and_update_generation()
+                except Exception as e:
+                    logging.error(f"Error advancing to the next generation: {e}")
+                    raise EvolutionError(f"Failed to advance to next generation: {e}") from e
+
+            # Clear elites and evaluated genomes
+            try:
+                self.manager.genomes.clear_elites()
+                self.manager.genomes.clear_evaluated()
+                logging.info("Cleared elite and evaluated genomes.")
+            except Exception as e:
+                logging.error(f"Error clearing elites or evaluated genomes: {e}")
+                raise EvolutionError(f"Failed to clear elite or evaluated genomes: {e}") from e
+
+        except EvolutionError as ee:
+            logging.error(f"Evolution error during population advancement: {ee}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error during population advancement: {e}")
+            raise RuntimeError(f"Unexpected error during population advancement: {e}") from e
+        finally:
+            self.is_evolving = False
+            logging.info("Population evolution process completed.")
 
     def reproduce_and_update_generation(self):
         """Manage the reproduction process and update generation information."""        
@@ -154,6 +194,7 @@ class Evolution:
     def add_reporter(self, reporter) -> None:
         """Add a reporter to the set of reporters."""
         self.reporter = reporter
+        self.manager.add_reporter(reporter)
 
     def get_reporter(self) -> 'NoteTaker':
         """Get the reporter."""

@@ -6,6 +6,8 @@ import logging
 
 from neuroevolution.lab.note_taker import NoteTaker, BaseReporter
 from neuroevolution.server.models import ExperimentData, UserData, FullExperimentConfig
+from neuroevolution.evolution.population_evolver import Evolution
+from neuroevolution.evolution.evaluation import Evaluation
 # pylint: disable=logging-fstring-interpolation
 
 # Custom Exception Classes
@@ -91,8 +93,8 @@ class BasicExperiment(ABC):
         try:
             self.phenotype_creator = self.class_config.phenotype_creator(self.config, self.phenotype_config)
             self.manager = self.class_config.population_manager()
-            self.evaluation = self.class_config.evaluation(self.config, self.fitness_function, self.manager.genomes)
-            self.evolution = self.class_config.evolution(self.config, self.manager, self.evaluation)
+            self.evaluation: Evaluation = self.class_config.evaluation(self.config, self.fitness_function, self.manager.genomes)
+            self.evolution: Evolution = self.class_config.evolution(self.config, self.manager, self.evaluation)
             logging.info(f"Evolution components initialized successfully for experiment {self.experiment_id}.")
         except Exception as e:
             logging.error(f"Error initializing evolution components for experiment {self.experiment_id}: {e}")
